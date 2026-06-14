@@ -1,0 +1,1738 @@
+{
+  "schede": [
+    {
+      "id": "mq2h4qiy9m2q",
+      "nome": "PUSH parchetto",
+      "esercizi": [
+        {
+          "id": "mq2h4qiy2xkg",
+          "kg": null,
+          "nome": "Planche Lean Hold",
+          "nota": "",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiy874g",
+          "kg": null,
+          "nome": "Press to HS Drill (tuck lift)",
+          "nota": "24",
+          "reps": 22,
+          "tipo": "statico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiy2yoi",
+          "kg": null,
+          "nome": "Full BL + Skin the cat",
+          "nota": "Posteriore",
+          "reps": 5,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiydqmd",
+          "kg": null,
+          "nome": "Planche Hold elastico",
+          "nota": "",
+          "reps": 20,
+          "tipo": "statico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiy8maa",
+          "kg": null,
+          "nome": "Muscle Up Negativi",
+          "nota": "",
+          "reps": 1,
+          "tipo": "dinamico",
+          "pausa": 120,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiynavq",
+          "kg": null,
+          "nome": "HS Push Up Negative",
+          "nota": "",
+          "reps": 5,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiyzk0l",
+          "kg": null,
+          "nome": "HS hold",
+          "nota": "",
+          "reps": 35,
+          "tipo": "statico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiylw7r",
+          "kg": null,
+          "nome": "Dips Parallele",
+          "nota": "Fatti 5x10 7kg",
+          "reps": 14,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiycqml",
+          "kg": null,
+          "nome": "Pike Push Up paralletes",
+          "nota": "Piedi alti\nFatto 7kg pike ok . A piedi alti, difficile",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiyyrcl",
+          "kg": null,
+          "nome": "Pseudo Planche Push Up",
+          "nota": "Fatte 3x8 7kg",
+          "reps": 11,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiyi880",
+          "kg": null,
+          "nome": "Deep Push Up su parallettes",
+          "nota": "Fatto 5x12 7kg",
+          "reps": 16,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiybszw",
+          "kg": null,
+          "nome": "Military press",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiym7nu",
+          "kg": null,
+          "nome": "Ring Support Hold",
+          "nota": "Anelli ruotati verso l'esterno",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiy1ftl",
+          "kg": null,
+          "nome": "Parallel Bar Triceps Extension",
+          "nota": "",
+          "reps": 12,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiy91w1",
+          "kg": null,
+          "nome": "Spalle con elastico",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 5
+        }
+      ]
+    },
+    {
+      "id": "mq6x8brdcxfe",
+      "nome": "GAMBE Gym",
+      "esercizi": [
+        {
+          "id": "mq6x1b5r4tlo",
+          "kg": 10,
+          "nome": "Squat",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq6x24lnka9e",
+          "kg": 10,
+          "nome": "Stacco da terra",
+          "nota": "Usare 5kg alti\nPiedi larghi\nMani inizio zigrinatura \nBilanciere attaccato a tibie\nSupero ginocchio e vado avanti con bacino",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6yxnli6eyl",
+          "kg": 10,
+          "nome": "Stacco rumeno ",
+          "nota": "Pensare solo alla discesa (lenta)\nSentir tirare dietro \nSalita veloce",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6x2lui2abh",
+          "kg": 20,
+          "nome": "Affondo bulgaro ",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6x35h1ju6z",
+          "kg": 20,
+          "nome": "Affondi camminati",
+          "nota": "",
+          "reps": 20,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6x4ekr6jhg",
+          "kg": 90,
+          "nome": "Leg press",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6xb1ryla5t",
+          "kg": 35,
+          "nome": "Leg extension ",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6x3na2xndn",
+          "kg": 30,
+          "nome": "Hyp thrust ",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6yqcx5k7e9",
+          "kg": 20,
+          "nome": "Prone leg curl ",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6xclwbvclh",
+          "kg": 10,
+          "nome": "Hypertension ",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq6x4tbk1cj4",
+          "kg": 10,
+          "nome": "Calf in piedi ",
+          "nota": "",
+          "reps": 20,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq6x5nhu4w98",
+          "kg": 20,
+          "nome": "Plank",
+          "nota": "",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq6x6psbf19h",
+          "kg": 20,
+          "nome": "Plank inverso",
+          "nota": "",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq6x79ux7i8b",
+          "kg": 10,
+          "nome": "Plank laterale ",
+          "nota": "3 ogni lato",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 30,
+          "serie": 6
+        },
+        {
+          "id": "mq6x7rzc64kv",
+          "kg": 5,
+          "nome": "Crunch su panca inclinata",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        }
+      ]
+    },
+    {
+      "id": "mq2h5ouwyjeu",
+      "nome": "GAMBE CORE parchetto",
+      "esercizi": [
+        {
+          "id": "mq2h5ouwv8co",
+          "kg": 22,
+          "nome": "Squat",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h5ouwz1cw",
+          "kg": 22,
+          "nome": "Affondi",
+          "nota": "10 per gamba",
+          "reps": 20,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouwc3v3",
+          "kg": 22,
+          "nome": "Squat bulgaro",
+          "nota": "Piede dietro appoggiato su sedia",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouw54do",
+          "kg": null,
+          "nome": "Step-up",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouwaiqt",
+          "kg": 22,
+          "nome": "Good morning",
+          "nota": "Piegamento in avanti, ginocchia ferme",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouwjnld",
+          "kg": 22,
+          "nome": "Ponte gluteo a gamba singola",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouwhedb",
+          "kg": null,
+          "nome": "Hyperextension a gambe flesse",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouw3l26",
+          "kg": 22,
+          "nome": "Calf raise in piedi",
+          "nota": "",
+          "reps": 15,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouwnfpj",
+          "kg": 22,
+          "nome": "Calf raise su un piede",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxxmru",
+          "kg": null,
+          "nome": "Calf raise seduto",
+          "nota": "",
+          "reps": 15,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxfz6f",
+          "kg": null,
+          "nome": "Mountain climber",
+          "nota": "",
+          "reps": 20,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxj0aj",
+          "kg": null,
+          "nome": "Salto in alto",
+          "nota": "",
+          "reps": 8,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxf50v",
+          "kg": 22,
+          "nome": "Plank",
+          "nota": "",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxr4mz",
+          "kg": null,
+          "nome": "Dead bug",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxuc5u",
+          "kg": null,
+          "nome": "Crunch a bicicletta",
+          "nota": "",
+          "reps": 20,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxdg2m",
+          "kg": null,
+          "nome": "Leg raise",
+          "nota": "",
+          "reps": 12,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5oux7cp6",
+          "kg": null,
+          "nome": "Plank laterale",
+          "nota": "",
+          "reps": 20,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxd9pf",
+          "kg": null,
+          "nome": "Superman dinamico",
+          "nota": "",
+          "reps": 12,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h5ouxx011",
+          "kg": null,
+          "nome": "L-Sit parallele",
+          "nota": "",
+          "reps": 10,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 5
+        }
+      ]
+    },
+    {
+      "id": "mq2h4qiygfgp",
+      "nome": "PUSH casa",
+      "esercizi": [
+        {
+          "id": "mq2h4qiy7lgb",
+          "kg": null,
+          "nome": "Warm-up Wall Slide + Cuban Rotation",
+          "nota": "5 minuti di riscaldamento",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 1
+        },
+        {
+          "id": "mq2h4qiygu4i",
+          "kg": null,
+          "nome": "Planche Lean Hold",
+          "nota": "",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiyejw1",
+          "kg": null,
+          "nome": "Press to HS Drill (tuck lift)",
+          "nota": "",
+          "reps": 15,
+          "tipo": "statico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiy5fqf",
+          "kg": null,
+          "nome": "HS Push Up Negative",
+          "nota": "",
+          "reps": 3,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiyuizl",
+          "kg": null,
+          "nome": "Pike Push Up",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiy3xsy",
+          "kg": null,
+          "nome": "Pseudo Planche Push Up",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiyrmib",
+          "kg": null,
+          "nome": "Deep Push Up su parallettes",
+          "nota": "",
+          "reps": 15,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiyzgrt",
+          "kg": null,
+          "nome": "Parallel Bar Triceps Extension",
+          "nota": "",
+          "reps": 12,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        }
+      ]
+    },
+    {
+      "id": "mq2h4qiy8ixc",
+      "nome": "PULL parchetto",
+      "esercizi": [
+        {
+          "id": "mq2h4qiykryk",
+          "kg": null,
+          "nome": "Pull ups",
+          "nota": "Solo 3 complete a 7",
+          "reps": 7,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 7
+        },
+        {
+          "id": "mq2h4qiysx2d",
+          "kg": null,
+          "nome": "Muscle Up",
+          "nota": "Elastico verde\nSolo 4 completi ",
+          "reps": 3,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 7
+        },
+        {
+          "id": "mq2h4qiyi27l",
+          "kg": null,
+          "nome": "High pull ups",
+          "nota": "Aggiungere 2 serie finali con elastici? \nOppure iniziare subito con elastici per arrivare almeno ai capezzoli",
+          "reps": 5,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiy08bx",
+          "kg": null,
+          "nome": "Australian pull up",
+          "nota": "Provare a zavorrare un pochino?",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiy26o6",
+          "kg": null,
+          "nome": "Scapula pull up",
+          "nota": "Rompere la barra",
+          "reps": 8,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiybar7",
+          "kg": null,
+          "nome": "Tuck Front Lever Hold",
+          "nota": "Scapole e SPACCA la barra",
+          "reps": 22,
+          "tipo": "statico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiypc9y",
+          "kg": null,
+          "nome": "Front Lever Hold elastico nero",
+          "nota": "",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiycat9",
+          "kg": null,
+          "nome": "Skin the cat",
+          "nota": "Anteriore\n5x6",
+          "reps": 5,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qiyyk9y",
+          "kg": null,
+          "nome": "Elastico deltoide posteriore",
+          "nota": "Nero Liestal \nVoila Genova",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 5
+        }
+      ]
+    },
+    {
+      "id": "mq2h4qiw91ua",
+      "nome": "GAMBE CORE casa",
+      "esercizi": [
+        {
+          "id": "mq2h4qixnwvg",
+          "kg": 22,
+          "nome": "Squat",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 5
+        },
+        {
+          "id": "mq2h4qixf27y",
+          "kg": 24,
+          "nome": "Affondi",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qixa2j6",
+          "kg": null,
+          "nome": "Squat bulgaro",
+          "nota": "Piede dietro appoggiato su sedia",
+          "reps": 7,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qixjqx1",
+          "kg": null,
+          "nome": "Step-up",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qixrtll",
+          "kg": 24,
+          "nome": "Good morning",
+          "nota": "Piegamento in avanti, ginocchia ferme",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qixx35q",
+          "kg": null,
+          "nome": "Ponte gluteo a gamba singola",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qixx6px",
+          "kg": null,
+          "nome": "Hyperextension a gambe flesse",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qix098h",
+          "kg": null,
+          "nome": "Calf raise in piedi",
+          "nota": "",
+          "reps": 15,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiy0jaf",
+          "kg": null,
+          "nome": "Calf raise su un piede",
+          "nota": "",
+          "reps": 12,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiylim1",
+          "kg": null,
+          "nome": "Calf raise seduto",
+          "nota": "",
+          "reps": 15,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiyeags",
+          "kg": null,
+          "nome": "Mountain climber",
+          "nota": "",
+          "reps": 20,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiylqbh",
+          "kg": null,
+          "nome": "Plank",
+          "nota": "",
+          "reps": 30,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiyv3pq",
+          "kg": null,
+          "nome": "Dead bug",
+          "nota": "",
+          "reps": 10,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiy11cu",
+          "kg": null,
+          "nome": "Crunch a bicicletta",
+          "nota": "",
+          "reps": 20,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiy3pxs",
+          "kg": null,
+          "nome": "Leg raise alla sbarra",
+          "nota": "",
+          "reps": 12,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiykgtj",
+          "kg": null,
+          "nome": "Leg raise sdraiato ",
+          "nota": "",
+          "reps": 12,
+          "tipo": "dinamico",
+          "pausa": 90,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiyc66x",
+          "kg": null,
+          "nome": "Plank laterale ",
+          "nota": "20 per lato",
+          "reps": 45,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiylmrf",
+          "kg": null,
+          "nome": "Superman dinamico",
+          "nota": "",
+          "reps": 12,
+          "tipo": "dinamico",
+          "pausa": 60,
+          "serie": 3
+        },
+        {
+          "id": "mq2h4qiykmrs",
+          "kg": null,
+          "nome": "L-Sit parallele",
+          "nota": "",
+          "reps": 10,
+          "tipo": "statico",
+          "pausa": 60,
+          "serie": 5
+        }
+      ]
+    }
+  ],
+  "storico": [
+    {
+      "id": "mq9rqgf4c7g4",
+      "data": "2026-06-11T15:45:03.676Z",
+      "nota": "",
+      "endTime": "2026-06-11T17:25:28.302Z",
+      "esercizi": [
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Planche Lean Hold",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 60,
+          "skipped": false,
+          "reps_target": 30,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Press to HS Drill (tuck lift)",
+          "nota": "24",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 22,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Full BL + Skin the cat",
+          "nota": "Posteriore",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 5,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Planche Hold elastico",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": true,
+          "reps_target": 20,
+          "serie_fatte": 0,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Muscle Up Negativi",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 120,
+          "skipped": true,
+          "reps_target": 1,
+          "serie_fatte": 0,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "HS Push Up Negative",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 5,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "HS hold",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 35,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Dips Parallele",
+          "nota": "Fatti 5x10 7kg",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 14,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Pike Push Up paralletes",
+          "nota": "Piedi alti\nFatto 7kg pike ok . A piedi alti, difficile",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 10,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Pseudo Planche Push Up",
+          "nota": "Fatte 3x8 7kg",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 11,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Deep Push Up su parallettes",
+          "nota": "Fatto 5x12 7kg",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 16,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Military press",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": true,
+          "reps_target": 10,
+          "serie_fatte": 0,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Ring Support Hold",
+          "nota": "Anelli ruotati verso l'esterno",
+          "tipo": "statico",
+          "pausa": 60,
+          "skipped": true,
+          "reps_target": 30,
+          "serie_fatte": 0,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Parallel Bar Triceps Extension",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": true,
+          "reps_target": 12,
+          "serie_fatte": 0,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Spalle con elastico",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": false,
+          "reps_target": 10,
+          "serie_fatte": 5,
+          "serie_target": 5
+        }
+      ],
+      "nomeScheda": "PUSH parchetto",
+      "_dbId": "mq9rqgf4c7g4"
+    },
+    {
+      "id": "mq8dyibrnko9",
+      "data": "2026-06-10T16:37:36.589Z",
+      "nota": "",
+      "endTime": "2026-06-10T18:12:02.365Z",
+      "esercizi": [
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Pull ups",
+          "nota": "Solo 3 complete a 7",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 7,
+          "serie_fatte": 7,
+          "serie_target": 7
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Muscle Up",
+          "nota": "Elastico verde\nSolo 4 completi ",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": true,
+          "reps_target": 3,
+          "serie_fatte": 0,
+          "serie_target": 7
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "High pull ups",
+          "nota": "Aggiungere 2 serie finali con elastici? \nOppure iniziare subito con elastici per arrivare almeno ai capezzoli",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 5,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Australian pull up",
+          "nota": "Provare a zavorrare un pochino?",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 10,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Scapula pull up",
+          "nota": "Rompere la barra",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": true,
+          "reps_target": 8,
+          "serie_fatte": 0,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Tuck Front Lever Hold",
+          "nota": "Scapole e SPACCA la barra",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 22,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Front Lever Hold elastico nero",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 30,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Skin the cat",
+          "nota": "Anteriore\n5x6",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 5,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Elastico deltoide posteriore",
+          "nota": "Nero Liestal \nVoila Genova",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": false,
+          "reps_target": 10,
+          "serie_fatte": 5,
+          "serie_target": 5
+        }
+      ],
+      "nomeScheda": "PULL parchetto",
+      "_dbId": "mq8dyibrnko9"
+    },
+    {
+      "id": "mq5gtm3y9cwi",
+      "data": "2026-06-08T15:28:00.637Z",
+      "nota": "",
+      "endTime": "2026-06-08T17:08:53.330Z",
+      "esercizi": [
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Planche Lean Hold",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 60,
+          "skipped": false,
+          "reps_target": 30,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Press to HS Drill (tuck lift)",
+          "nota": "22sec pausa 90",
+          "tipo": "statico",
+          "pausa": 60,
+          "skipped": false,
+          "reps_target": 20,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Full BL + Skin the cat",
+          "nota": "Posteriore",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 5,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Planche Hold elastico",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": true,
+          "reps_target": 20,
+          "serie_fatte": 0,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Muscle Up Negativi",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 120,
+          "skipped": true,
+          "reps_target": 1,
+          "serie_fatte": 0,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "HS Push Up Negative",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 5,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "HS hold",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 35,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Dips Parallele",
+          "nota": "14",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 13,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Pike Push Up paralletes",
+          "nota": "Gamba altr",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 9,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Pseudo Planche Push Up",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": true,
+          "reps_target": 11,
+          "serie_fatte": 1,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Deep Push Up su parallettes",
+          "nota": "16",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 13,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Military press",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": true,
+          "reps_target": 10,
+          "serie_fatte": 0,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Ring Support Hold",
+          "nota": "Anelli ruotati verso l'esterno",
+          "tipo": "statico",
+          "pausa": 60,
+          "skipped": true,
+          "reps_target": 30,
+          "serie_fatte": 0,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Parallel Bar Triceps Extension",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": true,
+          "reps_target": 12,
+          "serie_fatte": 0,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Spalle con elastico",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": false,
+          "reps_target": 10,
+          "serie_fatte": 5,
+          "serie_target": 5
+        }
+      ],
+      "nomeScheda": "PUSH parchetto",
+      "_dbId": "mq5gtm3y9cwi"
+    },
+    {
+      "id": "mq3qfd6nmcrl",
+      "data": "2026-06-07T10:25:55.295Z",
+      "nota": "",
+      "esercizi": [
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Pull ups",
+          "nota": "Solo 2 complete a 7",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 7,
+          "serie_fatte": 7,
+          "serie_target": 7
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Muscle Up",
+          "nota": "Elastico verde\nSolo 4",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 3,
+          "serie_fatte": 7,
+          "serie_target": 7
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "High pull ups",
+          "nota": "Aggiungere 2 serie finali con elastici? \nOppure iniziare subito con elastici per arrivare almeno ai capezzoli",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 5,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Australian pull up",
+          "nota": "Provare a zavorrare un pochino?",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 10,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Scapula pull up",
+          "nota": "Rompere la barra",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": true,
+          "reps_target": 8,
+          "serie_fatte": 0,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Tuck Front Lever Hold",
+          "nota": "Aumentare a 22\nScapole e SPACCA la barra",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 20,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Front Lever Hold elastico nero",
+          "nota": "Aumentare a 30",
+          "tipo": "statico",
+          "pausa": 90,
+          "skipped": false,
+          "reps_target": 28,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Skin the cat",
+          "nota": "Anteriore",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "skipped": true,
+          "reps_target": 5,
+          "serie_fatte": 1,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Elastico deltoide posteriore",
+          "nota": "Nero",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": false,
+          "reps_target": 10,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Scapular pull-up",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "skipped": true,
+          "reps_target": 8,
+          "serie_fatte": 0,
+          "serie_target": 4
+        }
+      ],
+      "nomeScheda": "PULL parchetto",
+      "_dbId": "mq3qfd6nmcrl"
+    },
+    {
+      "id": "mq2kv4vluxlf",
+      "data": "2026-06-06T16:38:48.177Z",
+      "nota": "",
+      "esercizi": [
+        {
+          "kg": 22,
+          "done": true,
+          "nome": "Squat",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "reps_target": 10,
+          "serie_fatte": 5,
+          "serie_target": 5
+        },
+        {
+          "kg": 22,
+          "done": true,
+          "nome": "Affondi",
+          "nota": "10 per gamba",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "reps_target": 20,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": 22,
+          "done": false,
+          "nome": "Squat bulgaro",
+          "nota": "Piede dietro appoggiato su sedia",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "reps_target": 10,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Step-up",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "reps_target": 10,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": 22,
+          "done": true,
+          "nome": "Good morning",
+          "nota": "Piegamento in avanti, ginocchia ferme",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "reps_target": 10,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": 22,
+          "done": true,
+          "nome": "Ponte gluteo a gamba singola",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 10,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Hyperextension a gambe flesse",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 10,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": 22,
+          "done": true,
+          "nome": "Calf raise in piedi",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 15,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": 22,
+          "done": true,
+          "nome": "Calf raise su un piede",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 10,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Calf raise seduto",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 15,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Mountain climber",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 20,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Salto in alto",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 90,
+          "reps_target": 8,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": 22,
+          "done": true,
+          "nome": "Plank",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 60,
+          "reps_target": 30,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Dead bug",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 10,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": false,
+          "nome": "Crunch a bicicletta",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 20,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Leg raise",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 12,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Plank laterale",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 60,
+          "reps_target": 20,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "Superman dinamico",
+          "nota": "",
+          "tipo": "dinamico",
+          "pausa": 60,
+          "reps_target": 12,
+          "serie_fatte": 3,
+          "serie_target": 3
+        },
+        {
+          "kg": null,
+          "done": true,
+          "nome": "L-Sit parallele",
+          "nota": "",
+          "tipo": "statico",
+          "pausa": 60,
+          "reps_target": 10,
+          "serie_fatte": 5,
+          "serie_target": 5
+        }
+      ],
+      "nomeScheda": "GAMBE CORE parchetto",
+      "_dbId": "mq2kv4vluxlf"
+    }
+  ],
+  "exportedAt": "2026-06-11T21:31:51.241Z"
+}

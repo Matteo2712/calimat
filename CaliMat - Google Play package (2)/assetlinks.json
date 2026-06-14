@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.matteo2712.twa",
+        "sha256_cert_fingerprints": ["B9:B9:26:06:DC:74:E8:2E:A9:8D:C9:C7:12:10:49:BF:D1:CD:14:0E:E0:38:32:29:BE:A1:D7:EF:7D:C1:E9:0A"]
+      }
+    }]

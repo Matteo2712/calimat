@@ -1,0 +1,898 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0a">
+<title>CaliMat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0a;--bg2:#141414;--bg3:#1c1c1c;--bg4:#242424;
+  --border:#2a2a2a;--border2:#333;
+  --text:#f0f0f0;--text2:#999;--text3:#555;
+  --accent:#c8f135;--accent-dark:#9bbf1a;
+  --red:#ff4d4d;--green:#4dff91;--orange:#ffaa00;
+  --radius:12px;--radius-sm:8px;
+  font-family:'Syne',sans-serif;
+}
+body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;max-width:420px;margin:0 auto}
+.mono{font-family:'DM Mono',monospace}
+button{font-family:'Syne',sans-serif;cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:'Syne',sans-serif;outline:none}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;position:sticky;top:0;background:var(--bg);z-index:100;border-bottom:1px solid var(--border)}
+.topbar-logo{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.topbar-logo span{color:var(--accent)}
+
+.page{display:none;padding:16px 20px 100px;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.sec-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin:20px 0 10px}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+.card-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-title{font-size:15px;font-weight:700}
+.card-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--bg3);color:var(--text2)}
+.badge.accent{background:rgba(200,241,53,.15);color:var(--accent)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;transition:all .15s}
+.btn-accent{background:var(--accent);color:#0a0a0a}
+.btn-accent:active{background:var(--accent-dark)}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.btn-ghost:active{background:var(--bg4)}
+.btn-danger{background:rgba(255,77,77,.15);color:var(--red);border:1px solid rgba(255,77,77,.2)}
+.btn-icon{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--bg3);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer}
+.btn-full{width:100%}
+
+.input-group{margin-bottom:14px}
+.input-label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;display:block}
+.input-field{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-size:14px;transition:border .15s}
+.input-field:focus{border-color:var(--accent)}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toggle-group{display:flex;gap:6px}
+.toggle-btn{flex:1;padding:8px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .15s}
+.toggle-btn.active{border-color:var(--accent);background:rgba(200,241,53,.1);color:var(--accent)}
+
+.fab{position:fixed;bottom:80px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#0a0a0a;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(200,241,53,.3);z-index:200;cursor:pointer}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border-radius:20px 20px 0 0;border:1px solid var(--border);width:100%;max-width:420px;max-height:90vh;overflow-y:auto;padding:24px 20px 40px;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 20px}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:20px}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+
+/* CONFIRM INLINE (no confirm()) */
+.inline-confirm{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;display:none}
+.inline-confirm.open{display:block}
+.inline-confirm p{font-size:13px;color:var(--text2);margin-bottom:10px;text-align:center}
+.inline-confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.icb-yes{background:rgba(77,255,145,.15);color:var(--green);border:1px solid rgba(77,255,145,.3);border-radius:var(--radius-sm);padding:10px;font-size:14px;font-weight:800;cursor:pointer}
+.icb-no{background:rgba(255,77,77,.1);color:var(--red);border:1px solid rgba(255,77,77,.2);border-radius:var(--radius-sm);padding:10px;font-size:14px;font-weight:800;cursor:pointer}
+
+/* SESSION */
+.session-overlay{position:fixed;inset:0;background:var(--bg);z-index:500;display:none;flex-direction:column;max-width:420px;margin:0 auto;left:50%;transform:translateX(-50%)}
+.session-overlay.open{display:flex}
+.session-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0}
+.prog-bar{height:3px;background:var(--bg3);flex-shrink:0}
+.prog-fill{height:100%;background:var(--accent);transition:width .4s ease}
+.session-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 24px;overflow:hidden}
+
+/* FASE LABEL */
+.phase-label{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;text-align:center}
+
+/* ESERCIZIO NAME */
+.ex-big-name{font-size:20px;font-weight:800;text-align:center;line-height:1.2;margin-bottom:6px}
+
+/* SERIE COUNTER — grandi e leggibili */
+.serie-counter{font-family:'DM Mono',monospace;font-size:36px;font-weight:500;color:var(--accent);text-align:center;margin-bottom:28px;letter-spacing:-1px}
+
+/* TIMER RING */
+.timer-wrap{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+.timer-wrap svg{transform:rotate(-90deg)}
+.t-number{position:absolute;font-family:'DM Mono',monospace;font-size:56px;font-weight:500;line-height:1;color:var(--text)}
+.t-label{position:absolute;bottom:-18px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+
+/* REPS DISPLAY (no timer, dinamico) */
+.reps-display{display:flex;flex-direction:column;align-items:center;justify-content:center;width:180px;height:180px;border-radius:50%;border:8px solid var(--bg3);margin-bottom:24px}
+.reps-number{font-family:'DM Mono',monospace;font-size:64px;font-weight:500;color:var(--green);line-height:1}
+.reps-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:4px}
+
+/* ACTION BUTTON — grande, centrale */
+.action-btn{width:100%;padding:18px;border-radius:var(--radius);font-size:18px;font-weight:800;letter-spacing:.5px;cursor:pointer;border:none;transition:all .15s;margin-bottom:10px}
+.action-btn:active{transform:scale(0.98)}
+.ab-start{background:var(--accent);color:#0a0a0a}
+.ab-finish{background:var(--green);color:#0a0a0a}
+.ab-rest{background:var(--orange);color:#0a0a0a}
+.ab-pause{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.ab-skip{background:var(--bg3);color:var(--text2);border:1px solid var(--border);font-size:14px;padding:12px}
+
+/* CONFIRM DONE (sessione) */
+.confirm-done{width:100%}
+.confirm-done p{font-size:14px;color:var(--text2);text-align:center;margin-bottom:12px}
+.confirm-done-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cd-yes{background:rgba(77,255,145,.15);color:var(--green);border:1px solid rgba(77,255,145,.3);border-radius:var(--radius);padding:16px;font-size:16px;font-weight:800;cursor:pointer}
+.cd-no{background:rgba(255,77,77,.1);color:var(--red);border:1px solid rgba(255,77,77,.2);border-radius:var(--radius);padding:16px;font-size:16px;font-weight:800;cursor:pointer}
+
+/* STORICO */
+.hist-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px}
+.hist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.hist-date{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase}
+.hist-name{font-size:15px;font-weight:700}
+.hist-ex{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2);padding:3px 0}
+.divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+
+/* STORICO EDIT */
+.hist-edit-ex{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.hist-edit-ex:last-child{border-bottom:none}
+.hist-edit-name{flex:1;font-size:13px;font-weight:600}
+.hist-edit-input{width:48px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:13px;text-align:center;font-family:'DM Mono',monospace}
+.hist-edit-input:focus{border-color:var(--accent)}
+.hist-done-toggle{width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
+.hist-done-toggle.done{background:rgba(77,255,145,.15);border-color:rgba(77,255,145,.3)}
+.hist-done-toggle.notdone{background:rgba(255,77,77,.1);border-color:rgba(255,77,77,.2)}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-val{font-size:28px;font-weight:800;color:var(--accent);font-family:'DM Mono',monospace}
+.stat-label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-top:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{aspect-ratio:1;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'DM Mono',monospace;color:var(--text3)}
+.cal-day.trained{background:rgba(200,241,53,.25);color:var(--accent);font-weight:700}
+.cal-day.today{border:1px solid var(--accent)}
+.cal-labels{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-label{text-align:center;font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase}
+
+.empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty i{font-size:40px;display:block;margin-bottom:12px}
+
+/* SCHEDA PICK */
+.scheda-pick-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;transition:border .15s}
+.scheda-pick-item:active{border-color:var(--accent)}
+
+/* EX CARD in edit */
+.ex-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px}
+
+.nota-field{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-size:13px;width:100%;min-height:60px;resize:none}
+.nota-field:focus{border-color:var(--accent)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--bg);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;background:none;border:none;color:var(--text3);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:color .15s}
+.bn-item.active{color:var(--accent)}
+.bn-item i{font-size:22px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Cali<span>Mat</span></div>
+  <button class="btn-icon" id="startSessionBtn" style="background:rgba(200,241,53,.15);border-color:rgba(200,241,53,.3);color:var(--accent);width:40px;height:40px">
+    <i class="ti ti-player-play" style="font-size:20px"></i>
+  </button>
+</div>
+
+<div id="pageSchede" class="page active">
+  <div class="sec-title">Le tue schede</div>
+  <div id="schedeList"></div>
+</div>
+<div id="pageStorico" class="page">
+  <div class="sec-title">Storico allenamenti</div>
+  <div id="storicoList"></div>
+</div>
+<div id="pageStats" class="page">
+  <div class="sec-title">Statistiche</div>
+  <div id="statsContent"></div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bn-item active" data-page="pageSchede" onclick="switchPage(this)"><i class="ti ti-clipboard-list"></i>Schede</button>
+  <button class="bn-item" data-page="pageStorico" onclick="switchPage(this)"><i class="ti ti-history"></i>Storico</button>
+  <button class="bn-item" data-page="pageStats" onclick="switchPage(this)"><i class="ti ti-chart-bar"></i>Stats</button>
+</nav>
+
+<button class="fab" id="fabBtn" onclick="openNewScheda()"><i class="ti ti-plus"></i></button>
+
+<!-- MODAL SCHEDA -->
+<div class="modal-overlay" id="modalScheda">
+  <div class="modal" id="modalSchedaInner">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalSchedaTitolo">Nuova scheda</div>
+    <div class="input-group">
+      <label class="input-label">Nome scheda</label>
+      <input class="input-field" id="schedaNome" placeholder="es. Push parchetto">
+    </div>
+    <div class="sec-title" style="margin-top:0">Esercizi</div>
+    <div id="esercizi-list"></div>
+    <button class="btn btn-ghost btn-full" style="margin-top:4px" onclick="addEsercizio()">
+      <i class="ti ti-plus"></i> Aggiungi esercizio
+    </button>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modalScheda')">Annulla</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveScheda()">Salva scheda</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PICK SCHEDA -->
+<div class="modal-overlay" id="modalPickScheda">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Inizia allenamento</div>
+    <div id="schedaPickerList"></div>
+    <button class="btn btn-ghost btn-full" style="margin-top:4px" onclick="closeModal('modalPickScheda')">Annulla</button>
+  </div>
+</div>
+
+<!-- MODAL NOTA FINE SESSIONE -->
+<div class="modal-overlay" id="modalNota">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Sessione completata!</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:16px">Vuoi aggiungere una nota?</p>
+    <textarea class="nota-field" id="sessionNota" placeholder="es. energia bassa, caldo..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="saveSession('')">Salta</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveSession(document.getElementById('sessionNota').value)">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT STORICO -->
+<div class="modal-overlay" id="modalEditStorico">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Modifica sessione</div>
+    <div class="input-group">
+      <label class="input-label">Nome scheda</label>
+      <input class="input-field" id="editStoricoNome">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Note</label>
+      <textarea class="nota-field" id="editStoricoNota"></textarea>
+    </div>
+    <div class="sec-title" style="margin-top:0">Esercizi</div>
+    <div id="editStoricoEsercizi"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modalEditStorico')">Annulla</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveEditStorico()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM INLINE (delete/end) -->
+<div class="modal-overlay" id="modalConfirm">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="confirmTitle">Conferma</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:20px" id="confirmMsg"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-ghost" onclick="closeModal('modalConfirm')">Annulla</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION OVERLAY -->
+<div class="session-overlay" id="sessionOverlay">
+  <div class="session-header">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)" id="sessNomeScheda"></div>
+      <div style="font-size:13px;font-weight:600;margin-top:2px;color:var(--text2)" id="sessEsProgress"></div>
+    </div>
+    <button class="btn btn-danger" style="font-size:12px;padding:8px 12px" onclick="confirmEnd()">
+      <i class="ti ti-x"></i> Termina
+    </button>
+  </div>
+  <div class="prog-bar"><div class="prog-fill" id="sessProgFill" style="width:0%"></div></div>
+
+  <div class="session-body" id="sessBody">
+    <!-- dinamicamente riempito -->
+  </div>
+</div>
+
+<script>
+// ─── STORAGE ─────────────────────────────────────────
+const SK='calimat_schede', HK='calimat_storico';
+function loadSchede(){return JSON.parse(localStorage.getItem(SK)||'[]')}
+function saveSchede(d){localStorage.setItem(SK,JSON.stringify(d))}
+function loadStorico(){return JSON.parse(localStorage.getItem(HK)||'[]')}
+function saveStorico(d){localStorage.setItem(HK,JSON.stringify(d))}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+// ─── AUDIO ───────────────────────────────────────────
+let _actx=null;
+function actx(){if(!_actx)_actx=new(window.AudioContext||window.webkitAudioContext)();return _actx;}
+function beep(freq,dur,vol){
+  try{const c=actx(),o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);
+  o.frequency.value=freq;o.type='sine';
+  g.gain.setValueAtTime(vol,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+  o.start(c.currentTime);o.stop(c.currentTime+dur+0.05);}catch(e){}
+}
+function bShort(){beep(880,0.08,0.25)}
+function bLong(){beep(600,0.55,0.4)}
+
+// ─── WAKE LOCK ───────────────────────────────────────
+let _wl=null;
+async function reqWL(){try{if('wakeLock' in navigator)_wl=await navigator.wakeLock.request('screen');}catch(e){}}
+function relWL(){if(_wl){_wl.release();_wl=null;}}
+
+// ─── NAV ─────────────────────────────────────────────
+function switchPage(btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById(btn.dataset.page).classList.add('active');
+  btn.classList.add('active');
+  const pg=btn.dataset.page;
+  if(pg==='pageSchede')renderSchede();
+  if(pg==='pageStorico')renderStorico();
+  if(pg==='pageStats')renderStats();
+  document.getElementById('fabBtn').style.display=pg==='pageSchede'?'flex':'none';
+}
+
+// ─── SCHEDE ──────────────────────────────────────────
+let _editId=null, _exTemp=[];
+
+function renderSchede(){
+  const el=document.getElementById('schedeList');
+  const schede=loadSchede();
+  if(!schede.length){el.innerHTML=`<div class="empty"><i class="ti ti-clipboard"></i><p>Nessuna scheda.<br>Crea la tua prima!</p></div>`;return;}
+  el.innerHTML=schede.map(s=>`
+    <div class="card">
+      <div class="card-row">
+        <div><div class="card-title">${esc(s.nome)}</div><div class="card-sub">${s.esercizi.length} esercizi</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-icon" onclick="openEditScheda('${s.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn-icon" style="color:var(--red);border-color:rgba(255,77,77,.2)" onclick="askDelete('${s.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+        ${s.esercizi.map(e=>`<span class="badge ${e.tipo==='statico'?'accent':''}">${esc(e.nome)}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function askDelete(id){
+  showConfirm('Elimina scheda','Eliminare questa scheda?',()=>{
+    saveSchede(loadSchede().filter(s=>s.id!==id));renderSchede();
+  });
+}
+
+function openNewScheda(){
+  _editId=null;_exTemp=[];
+  document.getElementById('schedaNome').value='';
+  document.getElementById('modalSchedaTitolo').textContent='Nuova scheda';
+  renderExList();
+  openModal('modalScheda');
+}
+
+function openEditScheda(id){
+  const s=loadSchede().find(x=>x.id===id);if(!s)return;
+  _editId=id;
+  _exTemp=JSON.parse(JSON.stringify(s.esercizi));
+  document.getElementById('schedaNome').value=s.nome;
+  document.getElementById('modalSchedaTitolo').textContent='Modifica scheda';
+  renderExList();
+  openModal('modalScheda');
+}
+
+// ─── ESERCIZI EDIT — no re-render on input ────────────
+function renderExList(){
+  const el=document.getElementById('esercizi-list');
+  if(!_exTemp.length){el.innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px 0">Nessun esercizio</div>`;return;}
+  el.innerHTML=_exTemp.map((e,i)=>buildExCard(e,i)).join('');
+}
+
+function buildExCard(e,i){
+  return `<div class="ex-card" id="exc_${i}">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:12px;font-weight:700;color:var(--text3);font-family:'DM Mono',monospace">${i+1}</span>
+      <input class="input-field" style="flex:1;font-size:14px" placeholder="Nome esercizio" value="${esc(e.nome)}"
+        onchange="setExField(${i},'nome',this.value)" oninput="setExFieldSilent(${i},'nome',this.value)">
+      <button class="btn-icon" style="color:var(--red);border-color:rgba(255,77,77,.2);width:32px;height:32px;flex-shrink:0" onclick="removeEx(${i})"><i class="ti ti-trash"></i></button>
+    </div>
+    <div style="margin-bottom:10px">
+      <div class="input-label">Tipo</div>
+      <div class="toggle-group">
+        <button class="toggle-btn ${e.tipo==='dinamico'?'active':''}" onclick="setExTipo(${i},'dinamico')">Dinamico (reps)</button>
+        <button class="toggle-btn ${e.tipo==='statico'?'active':''}" onclick="setExTipo(${i},'statico')">Statico (sec)</button>
+      </div>
+    </div>
+    <div class="input-row">
+      <div>
+        <div class="input-label">Serie</div>
+        <input class="input-field" type="number" min="1" placeholder="3" value="${e.serie||''}"
+          onchange="setExField(${i},'serie',+this.value)" style="font-family:'DM Mono',monospace">
+      </div>
+      <div>
+        <div class="input-label">${e.tipo==='statico'?'Secondi':'Reps'}</div>
+        <input class="input-field" type="number" min="1" placeholder="${e.tipo==='statico'?'30':'10'}" value="${e.reps||''}"
+          onchange="setExField(${i},'reps',+this.value)" style="font-family:'DM Mono',monospace">
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="input-label">Pausa (sec)</div>
+      <input class="input-field" type="number" min="0" placeholder="60" value="${e.pausa||''}"
+        onchange="setExField(${i},'pausa',+this.value)" style="font-family:'DM Mono',monospace">
+    </div>
+  </div>`;
+}
+
+// silent update: update data without re-rendering (preserves focus)
+function setExFieldSilent(i,k,v){_exTemp[i][k]=v;}
+// onchange: update + minimal patch for tipo/label changes only if needed
+function setExField(i,k,v){
+  _exTemp[i][k]=k==='nome'?v:Number(v);
+}
+function setExTipo(i,t){
+  _exTemp[i].tipo=t;
+  _exTemp[i].reps=t==='statico'?30:10;
+  // Only re-render this one card
+  const card=document.getElementById('exc_'+i);
+  if(card){const tmp=document.createElement('div');tmp.innerHTML=buildExCard(_exTemp[i],i);card.replaceWith(tmp.firstChild);}
+}
+function removeEx(i){
+  _exTemp.splice(i,1);
+  renderExList();
+}
+function addEsercizio(){
+  _exTemp.push({id:genId(),nome:'',tipo:'dinamico',serie:3,reps:10,pausa:60});
+  renderExList();
+  setTimeout(()=>document.getElementById('esercizi-list').lastElementChild?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+}
+
+function saveScheda(){
+  const nome=document.getElementById('schedaNome').value.trim();
+  if(!nome)return alert('Inserisci un nome');
+  if(!_exTemp.length)return alert('Aggiungi almeno un esercizio');
+  const schede=loadSchede();
+  if(_editId){const idx=schede.findIndex(s=>s.id===_editId);schede[idx].nome=nome;schede[idx].esercizi=_exTemp;}
+  else schede.push({id:genId(),nome,esercizi:_exTemp});
+  saveSchede(schede);
+  closeModal('modalScheda');
+  renderSchede();
+}
+
+// ─── SESSION STATE MACHINE ────────────────────────────
+// phases: READY | EXERCISE | REST_READY | REST | CONFIRM | DONE
+let S = {
+  scheda:null, exIdx:0, serIdx:0,
+  phase:'READY',
+  timer:null, tLeft:0, tTotal:0, paused:false,
+  completed:[]
+};
+
+document.getElementById('startSessionBtn').onclick=openPickScheda;
+
+function openPickScheda(){
+  const schede=loadSchede();
+  if(!schede.length){showAlert('Crea prima una scheda!');return;}
+  const el=document.getElementById('schedaPickerList');
+  el.innerHTML=schede.map(s=>`
+    <div class="scheda-pick-item" onclick="startSession('${s.id}')">
+      <div>
+        <div style="font-size:15px;font-weight:700">${esc(s.nome)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">${s.esercizi.length} esercizi</div>
+      </div>
+      <i class="ti ti-arrow-right" style="color:var(--text3);font-size:18px"></i>
+    </div>`).join('');
+  openModal('modalPickScheda');
+}
+
+function startSession(id){
+  const s=loadSchede().find(x=>x.id===id);if(!s)return;
+  closeModal('modalPickScheda');
+  S.scheda=JSON.parse(JSON.stringify(s));
+  S.exIdx=0;S.serIdx=0;S.paused=false;
+  S.completed=S.scheda.esercizi.map(e=>({nome:e.nome,tipo:e.tipo,serie_target:e.serie,reps_target:e.reps,pausa:e.pausa,serie_fatte:0,done:null}));
+  reqWL();
+  document.getElementById('sessionOverlay').classList.add('open');
+  renderSessHeader();
+  setPhase('READY');
+}
+
+function renderSessHeader(){
+  const ex=S.scheda.esercizi[S.exIdx];
+  document.getElementById('sessNomeScheda').textContent=S.scheda.nome;
+  document.getElementById('sessEsProgress').textContent=`Esercizio ${S.exIdx+1} di ${S.scheda.esercizi.length}`;
+  const total=S.scheda.esercizi.reduce((a,e)=>a+e.serie,0);
+  const done=S.completed.slice(0,S.exIdx).reduce((a,c)=>a+c.serie_target,0)+S.serIdx;
+  document.getElementById('sessProgFill').style.width=Math.round(done/total*100)+'%';
+}
+
+function setPhase(ph){
+  clearInterval(S.timer);
+  S.phase=ph;
+  S.paused=false;
+  renderSessHeader();
+  const ex=S.scheda.esercizi[S.exIdx];
+  const body=document.getElementById('sessBody');
+  const serLabel=`<div class="serie-counter">${S.serIdx+1} / ${ex.serie}</div>`;
+
+  if(ph==='READY'){
+    // Mostra esercizio + bottone START (nessun conto alla rovescia automatico)
+    body.innerHTML=`
+      <div class="phase-label">preparati</div>
+      <div class="ex-big-name">${esc(ex.nome)}</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:20px;text-align:center">
+        ${ex.tipo==='statico'?ex.reps+'s':ex.reps+' reps'} · pausa ${ex.pausa}s
+      </div>
+      ${serLabel}
+      ${timerRingHTML(20,20,'PREPARATI')}
+      <button class="action-btn ab-start" onclick="startCountdown()">START</button>
+      <button class="action-btn ab-skip" onclick="goExercise()">Salta countdown</button>`;
+    setTimerDisplay(20,20);
+  }
+  else if(ph==='COUNTDOWN'){
+    body.innerHTML=`
+      <div class="phase-label">preparati</div>
+      <div class="ex-big-name">${esc(ex.nome)}</div>
+      ${serLabel}
+      ${timerRingHTML(S.tLeft,S.tTotal,'secondi')}
+      <button class="action-btn ab-pause" id="btnPause" onclick="togglePause()">Pausa</button>
+      <button class="action-btn ab-skip" onclick="goExercise()">Salta</button>`;
+  }
+  else if(ph==='EXERCISE'){
+    if(ex.tipo==='dinamico'){
+      body.innerHTML=`
+        <div class="phase-label">esegui</div>
+        <div class="ex-big-name">${esc(ex.nome)}</div>
+        ${serLabel}
+        <div class="reps-display">
+          <div class="reps-number">${ex.reps}</div>
+          <div class="reps-label">reps</div>
+        </div>
+        <button class="action-btn ab-finish" onclick="serieCompleted()">FINISH</button>`;
+    } else {
+      body.innerHTML=`
+        <div class="phase-label">tieni</div>
+        <div class="ex-big-name">${esc(ex.nome)}</div>
+        ${serLabel}
+        ${timerRingHTML(ex.reps,ex.reps,'secondi')}
+        <button class="action-btn ab-pause" id="btnPause" onclick="togglePause()">Pausa</button>
+        <button class="action-btn ab-skip" onclick="serieCompleted()">Finisci</button>`;
+      startCountdownTimer(ex.reps,()=>serieCompleted());
+    }
+  }
+  else if(ph==='REST_READY'){
+    // Fine serie — mostra pausa, chiede di partire manualmente
+    body.innerHTML=`
+      <div class="phase-label">fine serie</div>
+      <div class="ex-big-name">${esc(ex.nome)}</div>
+      ${serLabel}
+      <div style="margin-bottom:28px;text-align:center">
+        <div style="font-size:48px;font-family:'DM Mono',monospace;color:var(--orange)">${ex.pausa}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:4px">secondi di pausa</div>
+      </div>
+      <button class="action-btn ab-rest" onclick="startRest()">Inizia riposo</button>
+      <button class="action-btn ab-skip" onclick="skipRest()">Salta riposo</button>`;
+  }
+  else if(ph==='REST'){
+    body.innerHTML=`
+      <div class="phase-label">riposo</div>
+      <div class="ex-big-name">${esc(ex.nome)}</div>
+      ${serLabel}
+      ${timerRingHTML(S.tLeft,S.tTotal,'secondi')}
+      <button class="action-btn ab-pause" id="btnPause" onclick="togglePause()">Pausa</button>
+      <button class="action-btn ab-skip" onclick="skipRest()">Salta</button>`;
+  }
+  else if(ph==='CONFIRM'){
+    body.innerHTML=`
+      <div class="phase-label">esercizio completato</div>
+      <div class="ex-big-name">${esc(ex.nome)}</div>
+      <div style="margin:24px 0 32px;font-size:72px;text-align:center">💪</div>
+      <div class="confirm-done">
+        <p>Hai completato tutte le ${ex.serie} serie?</p>
+        <div class="confirm-done-btns">
+          <button class="cd-yes" onclick="setDone(true)"><i class="ti ti-check"></i> Sì</button>
+          <button class="cd-no" onclick="setDone(false)"><i class="ti ti-x"></i> No</button>
+        </div>
+      </div>`;
+  }
+}
+
+function timerRingHTML(t,tot,label){
+  const pct=tot>0?t/tot:1;
+  const dash=502.65;
+  const off=dash-(dash*pct);
+  const clr=t<=3&&tot>3?'var(--red)':t<=10&&tot>10?'var(--orange)':'var(--accent)';
+  return `<div class="timer-wrap">
+    <svg width="180" height="180" viewBox="0 0 180 180">
+      <circle cx="90" cy="90" r="80" fill="none" stroke="var(--bg3)" stroke-width="8"/>
+      <circle cx="90" cy="90" r="80" fill="none" stroke="${clr}" stroke-width="8" stroke-linecap="round"
+        stroke-dasharray="${dash}" stroke-dashoffset="${off}" id="timerCircle"/>
+    </svg>
+    <span class="t-number" id="timerNum">${t}</span>
+    <span class="t-label">${label}</span>
+  </div>`;
+}
+
+function setTimerDisplay(t,tot){
+  const n=document.getElementById('timerNum');
+  const c=document.getElementById('timerCircle');
+  if(n) n.textContent=t;
+  if(c){
+    const pct=tot>0?t/tot:1;
+    const dash=502.65;
+    c.style.strokeDashoffset=dash-(dash*pct);
+    c.style.stroke=t<=3&&tot>3?'var(--red)':t<=10&&tot>10?'var(--orange)':'var(--accent)';
+  }
+}
+
+function startCountdown(){
+  S.tLeft=20;S.tTotal=20;
+  setPhase('COUNTDOWN');
+  startCountdownTimer(20,()=>goExercise());
+}
+
+function startCountdownTimer(secs,onEnd){
+  S.tLeft=secs;S.tTotal=secs;
+  clearInterval(S.timer);
+  S.timer=setInterval(()=>{
+    if(S.paused)return;
+    S.tLeft--;
+    if(S.tLeft<=3&&S.tLeft>0)bShort();
+    if(S.tLeft<=0){clearInterval(S.timer);bLong();onEnd();return;}
+    setTimerDisplay(S.tLeft,S.tTotal);
+    const pb=document.getElementById('btnPause');
+    if(pb)pb.textContent=S.paused?'Riprendi':'Pausa';
+  },1000);
+}
+
+function goExercise(){clearInterval(S.timer);setPhase('EXERCISE');}
+
+function togglePause(){
+  S.paused=!S.paused;
+  const pb=document.getElementById('btnPause');
+  if(pb)pb.textContent=S.paused?'Riprendi':'Pausa';
+}
+
+function serieCompleted(){
+  clearInterval(S.timer);
+  S.completed[S.exIdx].serie_fatte++;
+  const ex=S.scheda.esercizi[S.exIdx];
+  const lastSerie=(S.serIdx+1)>=ex.serie;
+  if(lastSerie){
+    setPhase('CONFIRM');
+  } else {
+    setPhase('REST_READY');
+  }
+}
+
+function startRest(){
+  const ex=S.scheda.esercizi[S.exIdx];
+  S.tLeft=ex.pausa;S.tTotal=ex.pausa;
+  setPhase('REST');
+  startCountdownTimer(ex.pausa,()=>nextSerie());
+}
+
+function skipRest(){clearInterval(S.timer);nextSerie();}
+
+function nextSerie(){
+  S.serIdx++;
+  setPhase('EXERCISE'); // Diritto all'esercizio, senza 20s
+  const ex=S.scheda.esercizi[S.exIdx];
+  if(ex.tipo==='statico'){
+    startCountdownTimer(ex.reps,()=>serieCompleted());
+  }
+}
+
+function setDone(val){
+  S.completed[S.exIdx].done=val;
+  S.serIdx=0;
+  S.exIdx++;
+  if(S.exIdx>=S.scheda.esercizi.length){finishSession();}
+  else{setPhase('READY');}
+}
+
+function finishSession(){
+  clearInterval(S.timer);
+  document.getElementById('sessionNota').value='';
+  openModal('modalNota');
+}
+
+function saveSession(nota){
+  const storico=loadStorico();
+  storico.unshift({
+    id:genId(),data:new Date().toISOString(),
+    nomeScheda:S.scheda.nome,nota:String(nota).trim(),
+    esercizi:S.completed.map(c=>({...c}))
+  });
+  saveStorico(storico);
+  closeModal('modalNota');
+  closeSession();
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const btn=document.querySelectorAll('.bn-item')[1];btn.classList.add('active');
+  document.getElementById('pageStorico').classList.add('active');
+  document.getElementById('fabBtn').style.display='none';
+  renderStorico();
+}
+
+function confirmEnd(){
+  showConfirm('Termina sessione','Vuoi davvero terminare la sessione corrente?',()=>closeSession());
+}
+
+function closeSession(){
+  clearInterval(S.timer);relWL();
+  document.getElementById('sessionOverlay').classList.remove('open');
+}
+
+// ─── STORICO ─────────────────────────────────────────
+function renderStorico(){
+  const el=document.getElementById('storicoList');
+  const storico=loadStorico();
+  if(!storico.length){el.innerHTML=`<div class="empty"><i class="ti ti-history"></i><p>Nessun allenamento ancora.</p></div>`;return;}
+  el.innerHTML=storico.map((s,i)=>{
+    const d=new Date(s.data);
+    const ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+    const ts=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="hist-item">
+      <div class="hist-header">
+        <div>
+          <div class="hist-date">${ds} · ${ts}</div>
+          <div class="hist-name">${esc(s.nomeScheda)}</div>
+          ${s.nota?`<div style="font-size:12px;color:var(--text2);margin-top:3px;font-style:italic">"${esc(s.nota)}"</div>`:''}
+        </div>
+        <button class="btn-icon" onclick="openEditStorico(${i})"><i class="ti ti-edit"></i></button>
+      </div>
+      <div class="divider"></div>
+      <div>${s.esercizi.map(e=>`
+        <div class="hist-ex">
+          <span>${esc(e.nome)}</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span style="font-family:'DM Mono',monospace;font-size:12px">${e.serie_fatte}/${e.serie_target}</span>
+            ${e.done===true?'<i class="ti ti-check" style="color:var(--green);font-size:14px"></i>':e.done===false?'<i class="ti ti-x" style="color:var(--red);font-size:14px"></i>':''}
+          </span>
+        </div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+let _editHIdx=null;
+// track toggle state in memory during edit
+let _editHDone=[];
+
+function openEditStorico(idx){
+  _editHIdx=idx;
+  const s=loadStorico()[idx];
+  _editHDone=s.esercizi.map(e=>e.done);
+  document.getElementById('editStoricoNome').value=s.nomeScheda;
+  document.getElementById('editStoricoNota').value=s.nota||'';
+  document.getElementById('editStoricoEsercizi').innerHTML=s.esercizi.map((e,i)=>`
+    <div class="hist-edit-ex">
+      <div class="hist-edit-name">${esc(e.nome)}<br><span style="font-size:11px;color:var(--text3)">${e.tipo==='statico'?e.reps_target+'s':e.reps_target+' reps'} · pausa ${e.pausa}s</span></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input class="hist-edit-input" type="number" min="0" value="${e.serie_fatte}" id="hes_${i}"> <span style="font-size:11px;color:var(--text3)">/ ${e.serie_target}</span>
+        <button class="hist-done-toggle ${e.done===true?'done':e.done===false?'notdone':''}" id="htog_${i}" onclick="cycleHistDone(${i})">
+          ${doneIcon(e.done)}
+        </button>
+      </div>
+    </div>`).join('');
+  openModal('modalEditStorico');
+}
+
+function doneIcon(v){return v===true?'<i class="ti ti-check" style="color:var(--green)"></i>':v===false?'<i class="ti ti-x" style="color:var(--red)"></i>':'<i class="ti ti-minus" style="color:var(--text3)"></i>';}
+
+function cycleHistDone(i){
+  const cur=_editHDone[i];
+  _editHDone[i]=cur===null?true:cur===true?false:null;
+  const btn=document.getElementById('htog_'+i);
+  btn.className='hist-done-toggle'+(_editHDone[i]===true?' done':_editHDone[i]===false?' notdone':'');
+  btn.innerHTML=doneIcon(_editHDone[i]);
+}
+
+function saveEditStorico(){
+  const storico=loadStorico();
+  const s=storico[_editHIdx];
+  s.nomeScheda=document.getElementById('editStoricoNome').value.trim()||s.nomeScheda;
+  s.nota=document.getElementById('editStoricoNota').value.trim();
+  s.esercizi.forEach((e,i)=>{
+    const inp=document.getElementById('hes_'+i);
+    if(inp)e.serie_fatte=parseInt(inp.value)||0;
+    e.done=_editHDone[i];
+  });
+  saveStorico(storico);
+  closeModal('modalEditStorico');
+  renderStorico();
+}
+
+// ─── STATS ───────────────────────────────────────────
+function renderStats(){
+  const el=document.getElementById('statsContent');
+  const storico=loadStorico();
+  const now=new Date();
+  const m=now.getMonth(),y=now.getFullYear();
+  const startW=new Date(now);startW.setDate(now.getDate()-((now.getDay()+6)%7));startW.setHours(0,0,0,0);
+  const wk=storico.filter(s=>new Date(s.data)>=startW).length;
+  const mo=storico.filter(s=>{const d=new Date(s.data);return d.getMonth()===m&&d.getFullYear()===y;}).length;
+  const lm=storico.filter(s=>{const d=new Date(s.data);const lmd=new Date(y,m-1,1);return d.getMonth()===lmd.getMonth()&&d.getFullYear()===lmd.getFullYear();}).length;
+  const months=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const bars=[];for(let i=7;i>=0;i--){const d=new Date(y,m-i,1);const cnt=storico.filter(s=>{const sd=new Date(s.data);return sd.getMonth()===d.getMonth()&&sd.getFullYear()===d.getFullYear();}).length;bars.push({l:months[d.getMonth()],cnt});}
+  const mx=Math.max(...bars.map(b=>b.cnt),1);
+  const dim=new Date(y,m+1,0).getDate();
+  const fd=(new Date(y,m,1).getDay()+6)%7;
+  const trained=new Set(storico.filter(s=>{const d=new Date(s.data);return d.getMonth()===m&&d.getFullYear()===y;}).map(s=>new Date(s.data).getDate()));
+  let calH='<div class="cal-labels">'+['Lu','Ma','Me','Gi','Ve','Sa','Do'].map(d=>`<div class="cal-label">${d}</div>`).join('')+'</div><div class="cal-grid">';
+  for(let i=0;i<fd;i++)calH+=`<div class="cal-day"></div>`;
+  for(let d=1;d<=dim;d++)calH+=`<div class="cal-day${trained.has(d)?' trained':''}${d===now.getDate()?' today':''}">${d}</div>`;
+  calH+='</div>';
+  el.innerHTML=`
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val">${wk}</div><div class="stat-label">Questa settimana</div></div>
+      <div class="stat-card"><div class="stat-val">${mo}</div><div class="stat-label">Questo mese</div></div>
+      <div class="stat-card"><div class="stat-val">${lm}</div><div class="stat-label">Mese scorso</div></div>
+      <div class="stat-card"><div class="stat-val">${storico.length}</div><div class="stat-label">Totale sessioni</div></div>
+    </div>
+    <div class="sec-title">Frequenza mensile</div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:flex-end;gap:4px;height:90px">
+        ${bars.map(b=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <div style="width:100%;background:${b.cnt>0?'var(--accent)':'var(--bg3)'};border-radius:3px 3px 0 0;height:${Math.round(b.cnt/mx*70)+4}px;min-height:4px"></div>
+          <div style="font-size:9px;color:var(--text3);font-weight:700">${b.l}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="sec-title">${['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'][m]} ${y}</div>
+    <div class="card">${calH}</div>`;
+}
+
+// ─── MODAL & CONFIRM UTILS ───────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
+});
+
+let _confirmCb=null;
+function showConfirm(title,msg,cb){
+  document.getElementById('confirmTitle').textContent=title;
+  document.getElementById('confirmMsg').textContent=msg;
+  _confirmCb=cb;
+  openModal('modalConfirm');
+}
+function showAlert(msg){showConfirm('Attenzione',msg,null);document.getElementById('confirmOkBtn').textContent='OK';}
+document.getElementById('confirmOkBtn').onclick=()=>{closeModal('modalConfirm');if(_confirmCb)_confirmCb();};
+
+// ─── INIT ────────────────────────────────────────────
+document.addEventListener('click',()=>{try{actx();}catch(e){}},{once:true});
+document.addEventListener('touchstart',()=>{try{actx();}catch(e){}},{once:true});
+renderSchede();
+
+if(!loadSchede().length){
+  saveSchede([{id:'demo1',nome:'Push parchetto',esercizi:[
+    {id:genId(),nome:'Planche Lean Hold',tipo:'statico',serie:5,reps:30,pausa:60},
+    {id:genId(),nome:'Press to HS Drill (tuck lift)',tipo:'statico',serie:5,reps:20,pausa:60},
+    {id:genId(),nome:'Full BL + Skin the cat',tipo:'dinamico',serie:3,reps:5,pausa:90},
+    {id:genId(),nome:'Planche Hold elastico nero',tipo:'statico',serie:3,reps:20,pausa:90},
+    {id:genId(),nome:'Muscle Up Negativi',tipo:'dinamico',serie:3,reps:1,pausa:120},
+    {id:genId(),nome:'HS Push Up Negative',tipo:'dinamico',serie:3,reps:5,pausa:90},
+    {id:genId(),nome:'HS hold',tipo:'statico',serie:3,reps:35,pausa:90},
+    {id:genId(),nome:'Dips Parallele',tipo:'dinamico',serie:5,reps:13,pausa:90},
+    {id:genId(),nome:'Pike Push Up paralletes',tipo:'dinamico',serie:3,reps:9,pausa:90},
+    {id:genId(),nome:'Pseudo Planche Push Up',tipo:'dinamico',serie:5,reps:11,pausa:90},
+    {id:genId(),nome:'Deep Push Up su parallettes',tipo:'dinamico',serie:5,reps:13,pausa:90},
+    {id:genId(),nome:'Military press',tipo:'dinamico',serie:5,reps:10,pausa:60},
+    {id:genId(),nome:'Ring Support Hold',tipo:'statico',serie:5,reps:30,pausa:60},
+    {id:genId(),nome:'Spalle con elastico',tipo:'dinamico',serie:5,reps:10,pausa:60},
+  ]}]);
+  renderSchede();
+}
+</script>
+</body>
+</html>

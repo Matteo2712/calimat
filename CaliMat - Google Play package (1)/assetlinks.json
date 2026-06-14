@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.calimat.twa",
+        "sha256_cert_fingerprints": ["4D:42:D8:18:F1:29:F4:25:EA:8B:77:E1:7A:1C:3A:F7:49:04:DE:71:63:EF:46:3F:5E:87:C3:92:16:DA:C5:40"]
+      }
+    }]
