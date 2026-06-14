@@ -796,10 +796,7 @@ function _tickNotif(){
     tag: 'calimat-session',
     renotify: true,
     silent: true,
-    requireInteraction: false,
-    //icon: '/icon-192.png',
-    //badge: '/icon-192.png',
-    data: { url: self.location ? self.location.href : '/' }
+    requireInteraction: false
   }).catch(()=>{});
 }
 
