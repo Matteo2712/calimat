@@ -3,6 +3,10 @@
       "target": {
         "namespace": "android_app",
         "package_name": "dev.pages.calimat.twa",
+<<<<<<< HEAD
         "sha256_cert_fingerprints": ["D1:77:5A:4B:EE:B6:9E:64:E3:95:ED:32:89:44:CE:95:33:F3:4C:7D:FF:D5:AB:F2:46:A5:9D:EB:E9:AE:19:AB"]
+=======
+        "sha256_cert_fingerprints": ["9A:6F:6A:F3:E9:31:57:61:31:FF:B4:73:51:D3:80:90:3A:82:5F:18:D3:AA:9F:BB:F9:4E:AB:D8:01:66:65:CB"]
+>>>>>>> origin/main
       }
     }]
