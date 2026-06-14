@@ -1,7 +1,6 @@
 // CaliMat Service Worker v1.2
 const CACHE = 'calimat-v1';
 
-// Installazione: non pre-cachi nulla, CaliMat usa Supabase
 self.addEventListener('install', e => {
   self.skipWaiting();
 });
@@ -23,7 +22,7 @@ self.addEventListener('notificationclick', e => {
   );
 });
 
-// Fetch: passa tutto alla rete (nessuna cache offline per ora)
+// Fetch: passa tutto alla rete
 self.addEventListener('fetch', e => {
   e.respondWith(fetch(e.request).catch(() => new Response('Offline', { status: 503 })));
 });
