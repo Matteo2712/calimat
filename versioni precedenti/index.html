@@ -166,19 +166,6 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 /* VOLUME SLIDER */
 .vol-row{display:flex;align-items:center;gap:12px;margin-top:10px}
 .vol-slider{flex:1;accent-color:var(--accent)}
-/* PiP WINDOW */
-#pipContent{background:#000;color:#fff;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:12px;text-align:center;gap:6px}
-#pipContent .pip-phase{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888}
-#pipContent .pip-ex{font-size:18px;font-weight:800;color:#fff;line-height:1.2}
-#pipContent .pip-timer{font-size:64px;font-weight:500;font-family:monospace;color:#c8f135;line-height:1}
-#pipContent .pip-set{font-size:13px;color:#888;font-weight:700}
-#pipContent .pip-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px}
-/* Notif banner */
-#notifBanner{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#1a1a1a;border-bottom:1px solid #333;padding:10px 18px;display:none;align-items:center;justify-content:space-between;gap:12px;z-index:700;font-size:14px;font-weight:700}
-#notifBanner.show{display:flex}
-#notifBanner .nb-timer{font-family:monospace;font-size:20px;color:#c8f135;min-width:48px}
-#notifBanner .nb-label{flex:1;color:#bbb;font-size:13px}
-#notifBanner .nb-close{color:#555;font-size:18px;cursor:pointer;padding:2px 6px}
 </style>
 </head>
 <body>
@@ -220,7 +207,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.2</span></div>
+  <div class="logo">Cali<span>Mat</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openM('mSettings')">
       <div class="sync-dot" id="syncDot"></div>
@@ -357,13 +344,6 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
   </div>
 </div>
 
-<!-- NOTIFICATION BANNER (fallback quando app in background) -->
-<div id="notifBanner">
-  <span class="nb-timer" id="nbTimer">--</span>
-  <span class="nb-label" id="nbLabel">allenamento in corso</span>
-  <span class="nb-close" onclick="hideNotifBanner()"><i class="ti ti-x"></i></span>
-</div>
-
 <!-- SESSION OVERLAY -->
 <div class="sov" id="sessOv">
   <div class="sh">
@@ -371,7 +351,6 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
       <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)" id="shScheda"></div>
       <div style="font-size:14px;font-weight:700;margin-top:2px;color:var(--text)" id="shProg"></div>
     </div>
-    <button class="btn bg" id="btnPip" style="font-size:13px;padding:9px 13px;flex-shrink:0;display:none" onclick="togglePiP()" title="Picture-in-Picture"><i class="ti ti-picture-in-picture"></i></button>
     <button class="btn bd" style="font-size:13px;padding:9px 13px;flex-shrink:0" onclick="endSessConfirm()"><i class="ti ti-x"></i> Termina</button>
   </div>
   <div class="pb"><div class="pf" id="pf" style="width:0%"></div></div>
@@ -600,221 +579,6 @@ function testBeep(){bS();setTimeout(()=>bL(),400);}
 let _wl=null;
 const reqWL=async()=>{try{if('wakeLock' in navigator)_wl=await navigator.wakeLock.request('screen');}catch(e){}};
 const relWL=()=>{if(_wl){_wl.release();_wl=null;}};
-
-// ─── PICTURE-IN-PICTURE ──────────────────────────────
-let _pipWin = null;
-let _pipInterval = null;
-
-function initPiPButton(){
-  const btn = document.getElementById('btnPip');
-  if('documentPictureInPicture' in window){
-    btn.style.display = '';
-  }
-}
-
-async function togglePiP(){
-  if(_pipWin){
-    _pipWin.close();
-    _pipWin = null;
-    clearInterval(_pipInterval);
-    return;
-  }
-  try{
-    _pipWin = await window.documentPictureInPicture.requestWindow({width:260, height:200});
-    // Inject styles and content
-    _pipWin.document.head.innerHTML = `
-      <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#000;color:#fff;font-family:Inter,monospace;display:flex;flex-direction:column;
-          align-items:center;justify-content:center;height:100vh;padding:14px;text-align:center;gap:5px}
-        .pp{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#666}
-        .pe{font-size:16px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:2px}
-        .pt{font-size:58px;font-weight:500;font-family:monospace;color:#c8f135;line-height:1}
-        .ps{font-size:12px;color:#666;font-weight:700;margin-top:2px}
-        .preps{font-size:48px;font-weight:700;color:#44ff88;line-height:1}
-        .prl{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px}
-      </style>`;
-    _pipWin.document.body.innerHTML = `
-      <div class="pp" id="pp">—</div>
-      <div class="pe" id="pe">CaliMat</div>
-      <div class="pt" id="pt">--</div>
-      <div class="ps" id="ps"></div>`;
-    _pipWin.addEventListener('pagehide', ()=>{ _pipWin=null; clearInterval(_pipInterval); });
-    // Update PiP every second
-    _pipInterval = setInterval(()=>updatePiP(), 500);
-    updatePiP();
-  } catch(e){ console.warn('PiP error:', e); }
-}
-
-function updatePiP(){
-  if(!_pipWin || !S.scheda) return;
-  const d = _pipWin.document;
-  const ex = S.scheda.esercizi[S.exIdx];
-  if(!ex) return;
-  const pp = d.getElementById('pp');
-  const pe = d.getElementById('pe');
-  const pt = d.getElementById('pt');
-  const ps = d.getElementById('ps');
-  if(!pp) return;
-
-  const phaseLabel = S.phase==='READY'?'PREPARATI':
-    S.phase==='COUNTDOWN'?'COUNTDOWN':
-    S.phase==='EXERCISE'?(ex.tipo==='statico'?'TIENI':'ESEGUI'):
-    S.phase==='REST'?'PAUSA':
-    S.phase==='CHRON'?'RIPOSO LIBERO':
-    S.phase==='CONFIRM'?'COMPLETATO':'...';
-
-  pp.textContent = phaseLabel;
-  pe.textContent = ex.nome;
-  ps.textContent = `Serie ${S.serIdx+1} / ${ex.serie}`;
-
-  if(S.phase==='EXERCISE' && ex.tipo==='dinamico'){
-    d.body.innerHTML = `
-      <div class="pp">${phaseLabel}</div>
-      <div class="pe">${ex.nome}</div>
-      <div class="preps">${ex.reps}</div>
-      <div class="prl">reps</div>
-      <div class="ps">Serie ${S.serIdx+1} / ${ex.serie}</div>`;
-  } else if(S.phase==='CHRON'){
-    const m=Math.floor(S.chronSec/60), sec=S.chronSec%60;
-    d.body.innerHTML = `
-      <div class="pp">RIPOSO LIBERO</div>
-      <div class="pe">${ex.nome}</div>
-      <div class="pt">${m}:${String(sec).padStart(2,'0')}</div>
-      <div class="ps">cronometro</div>`;
-  } else if(S.tL > 0 && (S.phase==='COUNTDOWN'||S.phase==='EXERCISE'||S.phase==='REST')){
-    pt.textContent = S.paused ? '⏸' : S.tL;
-  } else {
-    pt.textContent = '--';
-  }
-}
-
-// ─── PERSISTENT NOTIFICATION (fallback TWA / no PiP) ────────────
-// ─── SERVICE WORKER REGISTRATION ─────────────────────
-let _swReg = null;
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').then(reg=>{
-    _swReg = reg;
-    console.log('SW registrato');
-  }).catch(e=>console.warn('SW errore:',e));
-}
-
-// ─── NOTIFICHE PERSISTENTI (via Service Worker) ───────
-let _notifInterval = null;
-let _notifGranted = false;
-let _lastNotifPhase = '';
-let _lastNotifTick = 0;
-
-async function requestNotifPermission(){
-  if(!('Notification' in window)) return;
-  if(Notification.permission === 'granted'){ _notifGranted=true; return; }
-  if(Notification.permission !== 'denied'){
-    const p = await Notification.requestPermission();
-    _notifGranted = (p === 'granted');
-  }
-}
-
-function startPersistentNotif(){
-  clearInterval(_notifInterval);
-  _notifInterval = setInterval(()=>_tickNotif(), 1000);
-}
-
-function stopPersistentNotif(){
-  clearInterval(_notifInterval);
-  _notifInterval = null;
-  // Chiudi notifica SW
-  if(_swReg) _swReg.getNotifications({tag:'calimat-session'}).then(ns=>ns.forEach(n=>n.close()));
-  hideNotifBanner();
-}
-
-function _tickNotif(){
-  if(!S.scheda) return;
-  const ex = S.scheda.esercizi[S.exIdx];
-  if(!ex) return;
-
-  // ── Banner in-page (visibile solo quando schermo è acceso e app in background)
-  const banner = document.getElementById('notifBanner');
-  const nbTimer = document.getElementById('nbTimer');
-  const nbLabel = document.getElementById('nbLabel');
-  if(banner){
-    if(document.hidden){
-      banner.classList.add('show');
-    } else {
-      banner.classList.remove('show');
-    }
-    if(S.phase==='CHRON'){
-      const m=Math.floor(S.chronSec/60), sec=S.chronSec%60;
-      nbTimer.textContent = m+':'+String(sec).padStart(2,'0');
-      nbLabel.textContent = 'riposo libero — '+ex.nome;
-    } else if(S.tL > 0){
-      nbTimer.textContent = S.paused ? '⏸' : String(S.tL);
-      const phLbl = S.phase==='REST'?'pausa':S.phase==='COUNTDOWN'?'preparati':
-        S.phase==='EXERCISE'?(ex.tipo==='statico'?'tieni':'esegui'):'...';
-      nbLabel.textContent = ex.nome+' — '+phLbl;
-    } else {
-      nbTimer.textContent = '▶';
-      nbLabel.textContent = ex.nome;
-    }
-  }
-
-  // ── Notifica di sistema via SW (aggiornata ogni secondo o a cambio fase)
-  if(!_notifGranted || !_swReg) return;
-  const now = Date.now();
-  const phaseChanged = (_lastNotifPhase !== S.phase);
-  const tickDue = (now - _lastNotifTick >= 1000);
-  if(!phaseChanged && !tickDue) return;
-  _lastNotifPhase = S.phase;
-  _lastNotifTick = now;
-
-  let title, body;
-  if(S.phase==='CHRON'){
-    const m=Math.floor(S.chronSec/60), sec=S.chronSec%60;
-    title = `⏱ ${m}:${String(sec).padStart(2,'0')} — riposo libero`;
-    body = ex.nome + ` · serie ${S.serIdx+1}/${ex.serie}`;
-  } else if(S.phase==='REST'){
-    title = `⏸ Pausa — ${S.paused?'⏸':S.tL+'s'}`;
-    body = 'Prossimo: '+ex.nome + ` · serie ${S.serIdx+1}/${ex.serie}`;
-  } else if(S.phase==='EXERCISE'){
-    if(ex.tipo==='statico'){
-      title = `💪 Tieni — ${S.paused?'⏸':S.tL+'s'}`;
-    } else {
-      title = `💪 Esegui — ${ex.reps} reps`;
-    }
-    body = ex.nome + ` · serie ${S.serIdx+1}/${ex.serie}`;
-  } else if(S.phase==='COUNTDOWN'){
-    title = `▶ Preparati — ${S.tL}s`;
-    body = ex.nome;
-  } else if(S.phase==='CONFIRM'){
-    title = '✅ Serie completata!';
-    body = ex.nome + ` · serie ${S.serIdx}/${ex.serie}`;
-  } else {
-    return;
-  }
-
-  _swReg.showNotification(title, {
-    body,
-    tag: 'calimat-session',
-    renotify: true,
-    silent: true,
-    requireInteraction: false,
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    data: { url: self.location ? self.location.href : '/' }
-  }).catch(()=>{});
-}
-
-function hideNotifBanner(){
-  const b = document.getElementById('notifBanner');
-  if(b) b.classList.remove('show');
-}
-
-document.addEventListener('visibilitychange', ()=>{
-  if(!S.scheda) return;
-  const banner = document.getElementById('notifBanner');
-  if(!banner) return;
-  if(document.hidden) banner.classList.add('show');
-  else banner.classList.remove('show');
-});
 
 // ─── NAV ─────────────────────────────────────────────
 function navTo(btn){
@@ -1072,12 +836,7 @@ function startSession(id){
     nota:e.nota||'',
     serie_fatte:0,done:null,skipped:false
   }));
-  reqWL();
-  requestNotifPermission();
-  document.getElementById('sessOv').classList.add('open');
-  initPiPButton();
-  setPhase('READY');
-  startPersistentNotif();
+  reqWL();document.getElementById('sessOv').classList.add('open');setPhase('READY');
 }
 
 function sessHeader(){
@@ -1291,12 +1050,7 @@ function saveSession(nota){
   renderStorico();
 }
 function endSessConfirm(){confirm2('Termina sessione','Terminare la sessione corrente?',()=>closeSess());}
-function closeSess(){
-  clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
-  stopPersistentNotif();
-  if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
-  document.getElementById('sessOv').classList.remove('open');
-}
+function closeSess(){clearInterval(S.timer);clearInterval(S.chronTimer);relWL();document.getElementById('sessOv').classList.remove('open');}
 
 // ─── STORICO ─────────────────────────────────────────
 function exTarget(e){
