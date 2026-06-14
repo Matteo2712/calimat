@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "dev.pages.calimat.twa",
+        "sha256_cert_fingerprints": ["D1:77:5A:4B:EE:B6:9E:64:E3:95:ED:32:89:44:CE:95:33:F3:4C:7D:FF:D5:AB:F2:46:A5:9D:EB:E9:AE:19:AB"]
+      }
+    }]
