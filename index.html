@@ -337,7 +337,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="mt" id="cfTitle">Conferma</div>
     <p style="font-size:15px;color:var(--text2);margin-bottom:20px" id="cfMsg"></p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button class="btn bg" onclick="closeM('mConfirm')">Annulla</button>
+      <button class="btn bg" onclick="cfCancel()">Annulla</button>
       <button class="btn bd" id="cfOk">Conferma</button>
     </div>
   </div>
@@ -392,7 +392,7 @@ const DB = createClient(SUPABASE_URL, SUPABASE_KEY);
 let _currentUser = null;
 
 // ─── STORAGE KEYS (locali, usati come cache offline) ──────────
-const SK='cm_schede', HK='cm_storico';
+const SK='cm_schede', HK='cm_storico', SESSK='cm_active_session';
 const ls = s => JSON.parse(localStorage.getItem(s)||'[]');
 const ss = (s,d) => localStorage.setItem(s, JSON.stringify(d));
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -1034,6 +1034,77 @@ function saveScheda(){
 }
 
 // ─── SESSION ─────────────────────────────────────────
+// ─── PERSISTENZA SESSIONE (recovery dopo kill di sistema) ────
+function saveSessionSnapshot(){
+  if(!S.scheda) return;
+  const snap={
+    scheda:S.scheda, exIdx:S.exIdx, serIdx:S.serIdx, phase:S.phase,
+    tL:S.tL, tT:S.tT, paused:S.paused, done:S.done,
+    chronSec:S.chronSec, startTime:S.startTime,
+    savedAt:Date.now()
+  };
+  try{ localStorage.setItem(SESSK, JSON.stringify(snap)); }catch(e){}
+}
+function clearSessionSnapshot(){
+  try{ localStorage.removeItem(SESSK); }catch(e){}
+}
+function loadSessionSnapshot(){
+  try{
+    const raw=localStorage.getItem(SESSK);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function tryRecoverSession(){
+  const snap=loadSessionSnapshot();
+  if(!snap || !snap.scheda) return;
+  // Quanto tempo è passato da quando l'app è stata interrotta
+  const elapsedSec = Math.floor((Date.now()-snap.savedAt)/1000);
+  confirm2(
+    'Allenamento interrotto',
+    `È stato trovato un allenamento in corso (${snap.scheda.nome}) interrotto ${elapsedSec<60?elapsedSec+'s':Math.floor(elapsedSec/60)+'min'} fa. Vuoi riprenderlo?`,
+    ()=>resumeSession(snap, elapsedSec),
+    ()=>clearSessionSnapshot()
+  );
+}
+function resumeSession(snap, elapsedSec){
+  S.scheda=snap.scheda; S.exIdx=snap.exIdx; S.serIdx=snap.serIdx;
+  S.done=snap.done; S.startTime=snap.startTime; S.paused=false;
+  S.chronSec=snap.chronSec||0;
+
+  reqWL();
+  requestNotifPermission();
+  document.getElementById('sessOv').classList.add('open');
+  initPiPButton();
+
+  // Se eravamo in un timer a conto alla rovescia, sottrai il tempo passato
+  if((snap.phase==='COUNTDOWN'||snap.phase==='EXERCISE'||snap.phase==='REST') && snap.tL>0){
+    const remaining = snap.tL - elapsedSec;
+    if(remaining<=0){
+      // Il timer sarebbe già scaduto: avanza automaticamente alla fase successiva
+      if(snap.phase==='COUNTDOWN') setPhase('EXERCISE');
+      else if(snap.phase==='EXERCISE'){
+        const ex=S.scheda.esercizi[S.exIdx];
+        if(ex.tipo==='dinamico') setPhase('EXERCISE');
+        else serieDone();
+      }
+      else if(snap.phase==='REST') nextSerie();
+    } else {
+      setPhase(snap.phase);
+      S.tL=remaining; S.tT=snap.tT;
+      setTDisp(S.tL,S.tT);
+    }
+  } else if(snap.phase==='CHRON'){
+    setPhase('CHRON');
+    S.chronSec=(snap.chronSec||0)+elapsedSec;
+  } else {
+    setPhase(snap.phase||'READY');
+  }
+  startPersistentNotif();
+}
+// Salva uno snapshot ogni 2 secondi durante la sessione attiva
+setInterval(()=>{ if(S.scheda && document.getElementById('sessOv').classList.contains('open')) saveSessionSnapshot(); }, 2000);
+
 let S={
   scheda:null,exIdx:0,serIdx:0,phase:'',
   timer:null,tL:0,tT:0,paused:false,
@@ -1075,6 +1146,7 @@ function startSession(id){
   initPiPButton();
   setPhase('READY');
   startPersistentNotif();
+  saveSessionSnapshot();
 }
 
 function sessHeader(){
@@ -1291,6 +1363,7 @@ function endSessConfirm(){confirm2('Termina sessione','Terminare la sessione cor
 function closeSess(){
   clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
   stopPersistentNotif();
+  clearSessionSnapshot();
   if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
   document.getElementById('sessOv').classList.remove('open');
 }
@@ -1455,10 +1528,11 @@ function resetAll(){
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
-let _cfCb=null;
-function confirm2(title,msg,cb){document.getElementById('cfTitle').textContent=title;document.getElementById('cfMsg').textContent=msg;document.getElementById('cfOk').style.display='';_cfCb=cb;openM('mConfirm');}
+let _cfCb=null;let _cfCbNo=null;
+function confirm2(title,msg,cb,cbNo){document.getElementById('cfTitle').textContent=title;document.getElementById('cfMsg').textContent=msg;document.getElementById('cfOk').style.display='';_cfCb=cb;_cfCbNo=cbNo||null;openM('mConfirm');}
 function alert2(msg){document.getElementById('cfTitle').textContent='Attenzione';document.getElementById('cfMsg').textContent=msg;document.getElementById('cfOk').style.display='none';openM('mConfirm');}
-document.getElementById('cfOk').onclick=()=>{closeM('mConfirm');if(_cfCb)_cfCb();};
+document.getElementById('cfOk').onclick=()=>{closeM('mConfirm');if(_cfCb)_cfCb();_cfCb=null;_cfCbNo=null;};
+function cfCancel(){closeM('mConfirm');if(_cfCbNo)_cfCbNo();_cfCb=null;_cfCbNo=null;}
 
 // ─── AUDIO INIT ──────────────────────────────────────
 document.addEventListener('click',()=>{try{ac();}catch(e){}},{once:true});
@@ -1468,6 +1542,8 @@ document.addEventListener('touchstart',()=>{try{ac();}catch(e){}},{once:true});
 document.addEventListener('DOMContentLoaded',()=>{
   const sl=document.getElementById('volSlider');
   if(sl){sl.value=Math.round(_vol*100);sl.oninput=()=>{_vol=sl.value/100;localStorage.setItem('cm_vol',_vol);};}
+  // Controlla se c'è un allenamento interrotto da recuperare (kill di sistema, crash, ecc.)
+  setTimeout(()=>tryRecoverSession(), 600);
 });
 </script>
 </div><!-- /appRoot -->
