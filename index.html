@@ -115,8 +115,8 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .abquicksave{background:var(--accent);color:#000;font-size:14px;padding:12px;margin-top:10px;margin-bottom:0}
 .quick-edit-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:14px 0;text-align:left}
 .quick-edit-title{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase;margin-bottom:10px}
-.quick-edit-row{display:flex;gap:8px}
-.qei{flex:1;display:flex;flex-direction:column;gap:4px}
+.quick-edit-row{display:flex;gap:8px;flex-wrap:wrap}
+.qei{flex:1 1 70px;display:flex;flex-direction:column;gap:4px;min-width:70px}
 .qei label{font-size:11px;color:var(--text3);font-weight:600}
 .qei input{width:100%;padding:9px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:15px;font-family:'DM Mono',monospace;text-align:center}
 .cdbx p{font-size:15px;color:var(--text2);text-align:center;margin-bottom:14px}
@@ -302,6 +302,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div style="display:flex;gap:10px">
       <div class="ig" style="flex:1"><label class="il">Data</label><input class="inf" type="date" id="eHData"></div>
       <div class="ig" style="flex:1"><label class="il">Orario inizio</label><input class="inf" type="time" id="eHOra"></div>
+      <div class="ig" style="flex:1"><label class="il">Orario fine</label><input class="inf" type="time" id="eHOraFine"></div>
     </div>
     <div class="ig"><label class="il">Note sessione</label><textarea class="ta" id="eHNota"></textarea></div>
     <div class="stitle" style="margin-top:0">Esercizi</div>
@@ -339,6 +340,21 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="stitle">Pericoloso</div>
     <button class="btn bd bw" onclick="resetAll()"><i class="ti ti-alert-triangle"></i> Cancella tutti i dati</button>
     <div class="mac"><button class="btn bg bw" onclick="closeM('mSettings')">Chiudi</button></div>
+  </div>
+</div>
+
+<!-- MODAL TERMINA SESSIONE -->
+<div class="mo" id="mEndSess" style="z-index:800">
+  <div class="mbox">
+    <div class="mh"></div>
+    <div class="mt">Termina sessione</div>
+    <p style="font-size:15px;color:var(--text2);margin-bottom:20px">Cosa vuoi fare con questo allenamento?</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn ba" onclick="endSessionSavePartial()">Salva nello storico</button>
+      <button class="btn bg" onclick="pauseSessionForLater()">Metti in pausa</button>
+      <button class="btn bd" onclick="closeM('mEndSess');confirmDiscardSession()">Elimina</button>
+      <button class="btn bg" style="opacity:.7" onclick="closeM('mEndSess')">Annulla</button>
+    </div>
   </div>
 </div>
 
@@ -1252,12 +1268,13 @@ function setPhase(ph){
       <div class="chron-label">cronometro</div>
       ${nextExPreview('Prossimo esercizio')}
       <button class="acbtn abstart" onclick="stopChron()">Stop — prossimo esercizio</button>
-      ${nx?`<div class="quick-edit-box">
-        <div class="quick-edit-title">Modifica rapida — ${esc(nx.nome)}</div>
+      ${nx?`<div class="quick-edit-box" id="quickEditBox">
+        <div class="quick-edit-title">Modifica rapida</div>
         <div class="quick-edit-row">
           <div class="qei"><label>Serie</label><input type="number" min="1" id="qeSerie" value="${nx.serie}"></div>
           <div class="qei"><label>${nx.tipo==='statico'?'Secondi':'Reps'}</label><input type="number" min="0" id="qeReps" value="${nx.reps}"></div>
           <div class="qei"><label>Kg</label><input type="number" min="0" step="0.5" id="qeKg" value="${nx.kg||''}"></div>
+          <div class="qei"><label>Pausa (s)</label><input type="number" min="0" id="qePausa" value="${nx.pausa}"></div>
         </div>
         <button class="acbtn abquicksave" onclick="saveQuickEdit()">Salva modifiche esercizio</button>
       </div>`:''}
@@ -1388,14 +1405,17 @@ function saveQuickEdit(){
   const serie=parseInt(document.getElementById('qeSerie').value)||nx.serie;
   const reps=parseFloat(document.getElementById('qeReps').value);
   const kg=document.getElementById('qeKg').value;
+  const pausa=parseInt(document.getElementById('qePausa').value);
   nx.serie=serie;
   if(!isNaN(reps)) nx.reps=reps;
   nx.kg=kg?parseFloat(kg):null;
+  if(!isNaN(pausa)) nx.pausa=pausa;
   // Aggiorna anche done[] target per coerenza nello storico
   if(S.done[S.exIdx]){
     S.done[S.exIdx].serie_target=nx.serie;
     S.done[S.exIdx].reps_target=nx.reps;
     S.done[S.exIdx].kg=nx.kg;
+    S.done[S.exIdx].pausa=nx.pausa;
   }
   // Salva anche sulla scheda permanente, così la modifica resta per le prossime sessioni
   const schede=ls(SK);
@@ -1404,11 +1424,13 @@ function saveQuickEdit(){
     schede[sidx].esercizi[S.exIdx].serie=nx.serie;
     schede[sidx].esercizi[S.exIdx].reps=nx.reps;
     schede[sidx].esercizi[S.exIdx].kg=nx.kg;
+    schede[sidx].esercizi[S.exIdx].pausa=nx.pausa;
     ss(SK,schede);
     saveSchedaToDB(schede[sidx]);
   }
-  setPhase('CHRON'); // ri-renderizza con i nuovi valori nell'anteprima
-  alert2('Esercizio aggiornato.');
+  // Aggiorna SOLO l'anteprima del prossimo esercizio, senza toccare il cronometro in corso
+  const prevEl=document.querySelector('.next-preview-info');
+  if(prevEl) prevEl.textContent=exInfoLine(nx);
 }
 function stopChron(){pushHist();clearInterval(S.chronTimer);setPhase('READY');}
 function finishSession(){
@@ -1437,26 +1459,10 @@ function saveSession(nota){
   renderStorico();
 }
 function endSessConfirm(){
-  document.getElementById('cfTitle').textContent='Termina sessione';
-  document.getElementById('cfMsg').textContent='Cosa vuoi fare con questo allenamento?';
-  document.getElementById('cfOk').style.display='none';
-  // Riusa il modal di conferma ma con 3 azioni custom
-  const mac=document.getElementById('cfOk').parentElement;
-  mac.innerHTML=`
-    <button class="btn bg" style="flex:1" onclick="closeM('mConfirm')">Annulla</button>
-    <button class="btn bg" style="flex:1" onclick="closeM('mConfirm');pauseSessionForLater()">Metti in pausa</button>
-    <button class="btn bd" style="flex:1" onclick="closeM('mConfirm');confirmDiscardSession()">Cancella</button>
-    <button class="btn ba" style="flex:1" onclick="closeM('mConfirm');endSessionSavePartial()">Salva nello storico</button>`;
-  openM('mConfirm');
-}
-function _restoreConfirmButtons(){
-  const mac=document.getElementById('cfOk').parentElement;
-  mac.innerHTML=`
-    <button class="btn bg" onclick="cfCancel()">Annulla</button>
-    <button class="btn bd" id="cfOk">Conferma</button>`;
-  document.getElementById('cfOk').onclick=()=>{closeM('mConfirm');if(_cfCb)_cfCb();_cfCb=null;_cfCbNo=null;};
+  openM('mEndSess');
 }
 function pauseSessionForLater(){
+  closeM('mEndSess');
   // Lo snapshot è già salvato automaticamente: chiudiamo la sessione attiva
   // mantenendo il salvataggio, così al prossimo avvio dell'app verrà proposto il recovery.
   saveSessionSnapshot();
@@ -1464,15 +1470,13 @@ function pauseSessionForLater(){
   stopPersistentNotif();
   if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
   document.getElementById('sessOv').classList.remove('open');
-  _restoreConfirmButtons();
   alert2('Allenamento in pausa. Riaprendo CaliMat ti verrà chiesto se riprenderlo.');
 }
 function confirmDiscardSession(){
-  _restoreConfirmButtons();
-  confirm2('Cancella allenamento','Sei sicuro? L\'allenamento NON verrà salvato nello storico.',()=>closeSess());
+  confirm2('Elimina allenamento','Sei sicuro? L\'allenamento NON verrà salvato nello storico.',()=>closeSess());
 }
 function endSessionSavePartial(){
-  _restoreConfirmButtons();
+  closeM('mEndSess');
   clearInterval(S.timer);clearInterval(S.chronTimer);
   // Marca come "non fatto" tutti gli esercizi non ancora raggiunti/completati
   S.done.forEach((d,i)=>{
@@ -1483,7 +1487,7 @@ function endSessionSavePartial(){
   S.endTime=new Date().toISOString();
   document.getElementById('sessNota').value='';openM('mNota');
 }
-function endSessConfirmOld(){confirm2('Termina sessione','Terminare la sessione corrente?',()=>closeSess());}
+
 function closeSess(){
   clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
   stopPersistentNotif();
@@ -1543,6 +1547,12 @@ function openEditH(idx){
   const d=new Date(s.data);
   document.getElementById('eHData').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   document.getElementById('eHOra').value=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  if(s.endTime){
+    const de=new Date(s.endTime);
+    document.getElementById('eHOraFine').value=String(de.getHours()).padStart(2,'0')+':'+String(de.getMinutes()).padStart(2,'0');
+  } else {
+    document.getElementById('eHOraFine').value='';
+  }
   document.getElementById('eHExs').innerHTML=s.esercizi.map((e,i)=>`
     <div class="hee">
       <div class="heen">${esc(e.nome)}${e.skipped?'<span style="color:var(--red)"> (saltato)</span>':''}<br>
@@ -1560,16 +1570,16 @@ function saveEditH(){
   const h=ls(HK);const s=h[_eHIdx];
   s.nomeScheda=document.getElementById('eHNome').value.trim()||s.nomeScheda;
   s.nota=document.getElementById('eHNota').value.trim();
-  const dStr=document.getElementById('eHData').value, tStr=document.getElementById('eHOra').value;
+  const dStr=document.getElementById('eHData').value, tStr=document.getElementById('eHOra').value, tFineStr=document.getElementById('eHOraFine').value;
   if(dStr && tStr){
-    const oldDate=new Date(s.data);
     const newDate=new Date(dStr+'T'+tStr+':00');
-    // Sposta anche endTime mantenendo la stessa durata della sessione
-    if(s.endTime){
-      const durMs=new Date(s.endTime).getTime()-oldDate.getTime();
-      s.endTime=new Date(newDate.getTime()+durMs).toISOString();
-    }
     s.data=newDate.toISOString();
+    if(tFineStr){
+      // Usa lo stesso giorno della data di inizio (gestisce anche allenamenti che finiscono dopo mezzanotte)
+      let newEndDate=new Date(dStr+'T'+tFineStr+':00');
+      if(newEndDate.getTime()<newDate.getTime()) newEndDate=new Date(newEndDate.getTime()+86400000); // +1 giorno se finisce dopo mezzanotte
+      s.endTime=newEndDate.toISOString();
+    }
   }
   s.esercizi.forEach((e,i)=>{const inp=document.getElementById('hes_'+i);if(inp)e.serie_fatte=parseInt(inp.value)||0;e.done=_eHDone[i];});
   ss(HK,h);closeM('mEditH');renderStorico();
