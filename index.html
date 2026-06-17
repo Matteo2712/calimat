@@ -438,7 +438,7 @@ async function loadFromDB(){
   setSyncDot('syncing');
   try{
     const [wRes, hRes] = await Promise.all([
-      DB.from('workouts').select('*').order('updated_at',{ascending:false}),
+      DB.from('workouts').select('*').order('name',{ascending:true}),
       DB.from('sessions').select('*').order('completed_at',{ascending:false})
     ]);
     if(wRes.error||hRes.error) throw wRes.error||hRes.error;
