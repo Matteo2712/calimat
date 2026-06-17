@@ -440,7 +440,7 @@ async function loadFromDB(){
   setSyncDot('syncing');
   try{
     const [wRes, hRes] = await Promise.all([
-      DB.from('workouts').select('*').order('updated_at',{ascending:false}),
+      DB.from('workouts').select('*').order('name',{ascending:true}),
       DB.from('sessions').select('*').order('completed_at',{ascending:false})
     ]);
     if(wRes.error||hRes.error) throw wRes.error||hRes.error;
@@ -511,7 +511,7 @@ async function deleteSessionFromDB(id){
 async function updateSessionInDB(sessObj){
   setSyncDot('syncing');
   try{
-    const {error} = await DB.from('sessions').update({data:sessObj}).eq('id',sessObj.id);
+    const {error} = await DB.from('sessions').update({data:sessObj, completed_at:sessObj.data}).eq('id',sessObj.id);
     if(error) throw error;
     setSyncDot('ok');
   }catch(e){console.error('updateSessionInDB',e);setSyncDot('error');}
@@ -953,11 +953,11 @@ function buildExCard(e,i){
       </div>
     </div>
     <div class="ir4" style="margin-bottom:10px">
-      <div><div class="il">Serie${isE?' (cicli)':''}</div>
+      <div><div class="il">Serie</div>
         <input class="inf" type="number" min="1" placeholder="3" value="${e.serie||''}"
           style="padding:9px 7px;font-family:'DM Mono',monospace;font-size:14px"
           oninput="_exTemp[${i}].serie=+this.value||0"></div>
-      <div><div class="il">${isE?'Sec ciclo':isS?'Sec':'Reps'}</div>
+      <div><div class="il">${isE?'Sec':isS?'Sec':'Reps'}</div>
         <input class="inf" type="number" min="1" placeholder="${isE?'55':isS?'30':'10'}" value="${e.reps||''}"
           style="padding:9px 7px;font-family:'DM Mono',monospace;font-size:14px"
           oninput="_exTemp[${i}].reps=+this.value||0"></div>
@@ -970,8 +970,7 @@ function buildExCard(e,i){
           style="padding:9px 7px;font-family:'DM Mono',monospace;font-size:14px"
           oninput="_exTemp[${i}].pausa=+this.value||0"></div>
     </div>
-    ${isE?`<div style="font-size:12px;color:var(--text3);margin-bottom:10px;margin-top:-4px">L'EMOM ripete il ciclo di ${e.reps||'…'}s per ${e.serie||'…'} volte di seguito, senza pause separate.</div>`:''}
-    <div><div class="il">Nota (opzionale)</div>
+    <div><div class="il">Nota</div>
       <textarea class="ta" style="min-height:44px;font-size:14px" placeholder="es. attiva i tricipiti, gomiti stretti..."
         oninput="_exTemp[${i}].nota=this.value">${esc(e.nota||'')}</textarea>
     </div>
@@ -1295,8 +1294,8 @@ function setPhase(ph){
       ${nx?`<div class="quick-edit-box" id="quickEditBox">
         <div class="quick-edit-title">Modifica rapida</div>
         <div class="quick-edit-row">
-          <div class="qei"><label>${nx.tipo==='emom'?'Serie (cicli)':'Serie'}</label><input type="number" min="1" id="qeSerie" value="${nx.serie}"></div>
-          <div class="qei"><label>${nx.tipo==='emom'?'Sec ciclo':nx.tipo==='statico'?'Secondi':'Reps'}</label><input type="number" min="0" id="qeReps" value="${nx.reps}"></div>
+          <div class="qei"><label>Serie</label><input type="number" min="1" id="qeSerie" value="${nx.serie}"></div>
+          <div class="qei"><label>${nx.tipo==='emom'?'Sec':nx.tipo==='statico'?'Secondi':'Reps'}</label><input type="number" min="0" id="qeReps" value="${nx.reps}"></div>
           <div class="qei"><label>Kg</label><input type="number" min="0" step="0.5" id="qeKg" value="${nx.kg||''}"></div>
           <div class="qei" style="${nx.tipo==='emom'?'opacity:.35':''}"><label>Pausa (s)</label><input type="number" min="0" id="qePausa" value="${nx.tipo==='emom'?'':nx.pausa}" ${nx.tipo==='emom'?'disabled':''}></div>
         </div>
@@ -1324,8 +1323,8 @@ function setPhase(ph){
       <div class="quick-edit-box" id="confirmEditBox">
         <div class="quick-edit-title">Imposta per la prossima volta</div>
         <div class="quick-edit-row">
-          <div class="qei"><label>${ex.tipo==='emom'?'Serie (cicli)':'Serie'}</label><input type="number" min="1" id="cqSerie" value="${ex.serie}"></div>
-          <div class="qei"><label>${ex.tipo==='emom'?'Sec ciclo':ex.tipo==='statico'?'Secondi':'Reps'}</label><input type="number" min="0" id="cqReps" value="${ex.reps}"></div>
+          <div class="qei"><label>Serie</label><input type="number" min="1" id="cqSerie" value="${ex.serie}"></div>
+          <div class="qei"><label>${ex.tipo==='emom'?'Sec':ex.tipo==='statico'?'Secondi':'Reps'}</label><input type="number" min="0" id="cqReps" value="${ex.reps}"></div>
           <div class="qei"><label>Kg</label><input type="number" min="0" step="0.5" id="cqKg" value="${ex.kg||''}"></div>
           <div class="qei" style="${ex.tipo==='emom'?'opacity:.35':''}"><label>Pausa (s)</label><input type="number" min="0" id="cqPausa" value="${ex.tipo==='emom'?'':ex.pausa}" ${ex.tipo==='emom'?'disabled':''}></div>
         </div>
@@ -1337,7 +1336,8 @@ function setPhase(ph){
           <button class="cdyes" onclick="confirmDoneWithNote(true)"><i class="ti ti-check"></i> Si</button>
           <button class="cdno" onclick="confirmDoneWithNote(false)"><i class="ti ti-x"></i> No</button>
         </div>
-      </div>`;
+      </div>
+      ${backBtnHTML()}`;
   }
 }
 function saveConfirmEdit(){
@@ -1348,16 +1348,12 @@ function saveConfirmEdit(){
   const kg=document.getElementById('cqKg').value;
   const pausaInp=document.getElementById('cqPausa');
   const pausa=pausaInp?parseInt(pausaInp.value):NaN;
+  // NB: questi valori valgono SOLO per la prossima volta — non toccano S.done[],
+  // che deve continuare a riflettere cosa è stato effettivamente eseguito oggi (per lo storico).
   ex.serie=serie;
   if(!isNaN(reps)) ex.reps=reps;
   ex.kg=kg?parseFloat(kg):null;
   if(!isNaN(pausa)) ex.pausa=pausa;
-  if(S.done[S.exIdx]){
-    S.done[S.exIdx].serie_target=ex.serie;
-    S.done[S.exIdx].reps_target=ex.reps;
-    S.done[S.exIdx].kg=ex.kg;
-    S.done[S.exIdx].pausa=ex.pausa;
-  }
   const schede=ls(SK);
   const sidx=schede.findIndex(s=>s.id===S.scheda.id);
   if(sidx>=0 && schede[sidx].esercizi[S.exIdx]){
@@ -1642,8 +1638,7 @@ function openEditH(idx){
       <div class="heen">${esc(e.nome)}${e.skipped?'<span style="color:var(--red)"> (saltato)</span>':''}<br>
         <span>${e.tipo==='emom'?'EMOM '+e.reps_target+'s/ciclo':e.tipo==='statico'?e.reps_target+'s':e.reps_target+' reps'}${e.kg?' — '+e.kg+'kg':''}${e.tipo!=='emom'?' — pausa '+e.pausa+'s':''}</span>
       </div>
-      <input class="hei" type="number" min="0" value="${e.serie_fatte}" id="hes_${i}">
-      <span style="font-size:12px;color:var(--text3)">/${e.serie_target}</span>
+      <span style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace">${e.serie_fatte}/${e.serie_target}</span>
       <button class="hdtog ${e.done===true?'done':e.done===false?'notdone':''}" id="htog_${i}" onclick="cycleHDone(${i})">${dIcon(e.done)}</button>
     </div>`).join('');
   openM('mEditH');
@@ -1665,7 +1660,7 @@ function saveEditH(){
       s.endTime=newEndDate.toISOString();
     }
   }
-  s.esercizi.forEach((e,i)=>{const inp=document.getElementById('hes_'+i);if(inp)e.serie_fatte=parseInt(inp.value)||0;e.done=_eHDone[i];});
+  s.esercizi.forEach((e,i)=>{e.done=_eHDone[i];});
   ss(HK,h);closeM('mEditH');renderStorico();
   updateSessionInDB(s);
 }
