@@ -94,7 +94,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 22px;overflow-y:auto;text-align:center}
 .sphase{font-size:12px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
 .sexname{font-size:22px;font-weight:800;line-height:1.2;margin-bottom:6px;max-width:320px;color:var(--text)}
-.snote{font-size:14px;color:var(--orange);margin-bottom:8px;max-width:300px;font-weight:600;line-height:1.4;padding:8px 12px;background:rgba(255,170,0,.1);border-radius:8px;border:1px solid rgba(255,170,0,.25)}
+.snote{font-size:14px;color:var(--text);margin-bottom:8px;max-width:300px;font-weight:600;line-height:1.4;padding:8px 12px;background:rgba(255,170,0,.1);border-radius:8px;border:1px solid rgba(255,170,0,.25)}
 .skginfo{font-size:14px;color:var(--text2);margin-bottom:8px;font-weight:600}
 .scnt{font-family:'DM Mono',monospace;font-size:42px;font-weight:500;color:var(--accent);margin-bottom:24px;letter-spacing:-1px}
 .twrap{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
@@ -111,6 +111,14 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .abpause{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
 .abskip{background:var(--bg3);color:var(--text2);border:1px solid var(--border);font-size:15px;padding:13px}
 .abskipex{background:rgba(255,68,68,.1);color:var(--red);border:1px solid rgba(255,68,68,.25);font-size:14px;padding:11px}
+.abback{background:transparent;color:var(--text3);border:1px solid var(--border);font-size:13px;padding:10px}
+.abquicksave{background:var(--accent);color:#000;font-size:14px;padding:12px;margin-top:10px;margin-bottom:0}
+.quick-edit-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:14px 0;text-align:left}
+.quick-edit-title{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase;margin-bottom:10px}
+.quick-edit-row{display:flex;gap:8px}
+.qei{flex:1;display:flex;flex-direction:column;gap:4px}
+.qei label{font-size:11px;color:var(--text3);font-weight:600}
+.qei input{width:100%;padding:9px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:15px;font-family:'DM Mono',monospace;text-align:center}
 .cdbx p{font-size:15px;color:var(--text2);text-align:center;margin-bottom:14px}
 .cdbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cdyes{background:rgba(68,255,136,.15);color:var(--green);border:1px solid rgba(68,255,136,.35);border-radius:var(--radius);padding:17px;font-size:17px;font-weight:800;cursor:pointer}
@@ -291,6 +299,10 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
       <button class="bi" style="color:var(--red);border-color:rgba(255,68,68,.3)" onclick="deleteSession()"><i class="ti ti-trash"></i></button>
     </div>
     <div class="ig"><label class="il">Nome scheda</label><input class="inf" id="eHNome"></div>
+    <div style="display:flex;gap:10px">
+      <div class="ig" style="flex:1"><label class="il">Data</label><input class="inf" type="date" id="eHData"></div>
+      <div class="ig" style="flex:1"><label class="il">Orario inizio</label><input class="inf" type="time" id="eHOra"></div>
+    </div>
     <div class="ig"><label class="il">Note sessione</label><textarea class="ta" id="eHNota"></textarea></div>
     <div class="stitle" style="margin-top:0">Esercizi</div>
     <div id="eHExs"></div>
@@ -1071,6 +1083,7 @@ function resumeSession(snap, elapsedSec){
   S.scheda=snap.scheda; S.exIdx=snap.exIdx; S.serIdx=snap.serIdx;
   S.done=snap.done; S.startTime=snap.startTime; S.paused=false;
   S.chronSec=snap.chronSec||0;
+  _hist=[];
 
   reqWL();
   requestNotifPermission();
@@ -1105,6 +1118,7 @@ function resumeSession(snap, elapsedSec){
 // Salva uno snapshot ogni 2 secondi durante la sessione attiva
 setInterval(()=>{ if(S.scheda && document.getElementById('sessOv').classList.contains('open')) saveSessionSnapshot(); }, 2000);
 
+let _hist=[];
 let S={
   scheda:null,exIdx:0,serIdx:0,phase:'',
   timer:null,tL:0,tT:0,paused:false,
@@ -1144,6 +1158,7 @@ function startSession(id){
   requestNotifPermission();
   document.getElementById('sessOv').classList.add('open');
   initPiPButton();
+  _hist=[];
   setPhase('READY');
   startPersistentNotif();
   saveSessionSnapshot();
@@ -1177,7 +1192,7 @@ function setPhase(ph){
     <div class="sexname">${esc(ex.nome)}</div>
     ${ex.nota?`<div class="snote">${esc(ex.nota)}</div>`:''}
     ${ex.kg?`<div class="skginfo">${ex.kg} kg</div>`:''}`;
-  const skipExBtn=`<button class="acbtn abskipex" onclick="skipExercise()"><i class="ti ti-player-skip-forward"></i> Salta esercizio</button>`;
+  const skipExBtn=`<button class="acbtn abskipex" onclick="skipExercise()"><i class="ti ti-player-skip-forward"></i> Skip esercizio</button>`;
 
   // next-ex preview block (used in READY, COUNTDOWN, CHRON)
   function nextExPreview(label){
@@ -1197,8 +1212,8 @@ function setPhase(ph){
       ${nextExPreview('Prossimo esercizio')}
       ${serLbl}${tRingHTML(20,20,'secondi')}
       <button class="acbtn abstart" onclick="doStart()">START</button>
-      <button class="acbtn abskip" onclick="goExercise()">Salta countdown</button>
-      ${skipExBtn}`;
+      <button class="acbtn abskip" onclick="goExercise()">Skip</button>
+      ${skipExBtn}${backBtnHTML()}`;
     setTDisp(20,20);
   } else if(ph==='COUNTDOWN'){
     sb.innerHTML=`
@@ -1206,36 +1221,47 @@ function setPhase(ph){
       ${nextExPreview('Prossimo esercizio')}
       ${serLbl}${tRingHTML(S.tL,S.tT,'secondi')}
       <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
-      <button class="acbtn abskip" onclick="goExercise()">Salta</button>
-      ${skipExBtn}`;
+      <button class="acbtn abskip" onclick="goExercise()">Skip</button>
+      ${skipExBtn}${backBtnHTML()}`;
     runTimer(S.tL,()=>goExercise());
   } else if(ph==='EXERCISE'){
     if(ex.tipo==='dinamico'){
       sb.innerHTML=`${exHead}${serLbl}
         <div class="rdis"><div class="rnum">${ex.reps}</div><div class="rlbl">reps</div></div>
         <button class="acbtn abfinish" onclick="serieDone()">FINISH</button>
-        ${skipExBtn}`;
+        ${skipExBtn}${backBtnHTML()}`;
     } else {
       sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.reps,ex.reps,'secondi')}
         <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
-        <button class="acbtn abskip" onclick="serieDone()">Finisci serie</button>
-        ${skipExBtn}`;
+        <button class="acbtn abskip" onclick="serieDone()">Skip</button>
+        ${skipExBtn}${backBtnHTML()}`;
       runTimer(ex.reps,()=>serieDone());
     }
   } else if(ph==='REST'){
     sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.pausa,ex.pausa,'secondi')}
       <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
-      <button class="acbtn abskip" onclick="skipRest()">Salta pausa</button>
-      ${skipExBtn}`;
+      <button class="acbtn abskip" onclick="skipRest()">Skip</button>
+      ${skipExBtn}${backBtnHTML()}`;
     runTimer(ex.pausa,()=>nextSerie());
   } else if(ph==='CHRON'){
     S.chronSec=0;
+    const nx=S.scheda.esercizi[S.exIdx];
     sb.innerHTML=`
       <div class="sphase">riposo libero</div>
       <div class="chron-time" id="chronDisp">0:00</div>
       <div class="chron-label">cronometro</div>
       ${nextExPreview('Prossimo esercizio')}
-      <button class="acbtn abstart" onclick="stopChron()">Stop — prossimo esercizio</button>`;
+      <button class="acbtn abstart" onclick="stopChron()">Stop — prossimo esercizio</button>
+      ${nx?`<div class="quick-edit-box">
+        <div class="quick-edit-title">Modifica rapida — ${esc(nx.nome)}</div>
+        <div class="quick-edit-row">
+          <div class="qei"><label>Serie</label><input type="number" min="1" id="qeSerie" value="${nx.serie}"></div>
+          <div class="qei"><label>${nx.tipo==='statico'?'Secondi':'Reps'}</label><input type="number" min="0" id="qeReps" value="${nx.reps}"></div>
+          <div class="qei"><label>Kg</label><input type="number" min="0" step="0.5" id="qeKg" value="${nx.kg||''}"></div>
+        </div>
+        <button class="acbtn abquicksave" onclick="saveQuickEdit()">Salva modifiche esercizio</button>
+      </div>`:''}
+      ${backBtnHTML()}`;
     S.chronTimer=setInterval(()=>{
       S.chronSec++;
       const m=Math.floor(S.chronSec/60),sec=S.chronSec%60;
@@ -1308,20 +1334,42 @@ function runTimer(secs,onEnd){
   },1000);
 }
 function togPause(){S.paused=!S.paused;const pb=document.getElementById('bpause');if(pb)pb.textContent=S.paused?'Riprendi':'Pausa';}
-function doStart(){S.tL=20;S.tT=20;setPhase('COUNTDOWN');}
-function goExercise(){clearInterval(S.timer);setPhase('EXERCISE');}
+// ─── HISTORY STACK (per pulsante Indietro) ────────────
+function pushHist(){
+  _hist.push({
+    exIdx:S.exIdx, serIdx:S.serIdx, phase:S.phase,
+    done:JSON.parse(JSON.stringify(S.done)), chronSec:S.chronSec
+  });
+  if(_hist.length>20) _hist.shift(); // limite di sicurezza
+}
+function goBackStep(){
+  const prev=_hist.pop();
+  if(!prev) return;
+  S.exIdx=prev.exIdx; S.serIdx=prev.serIdx; S.done=prev.done; S.chronSec=prev.chronSec;
+  clearInterval(S.timer);clearInterval(S.chronTimer);
+  setPhase(prev.phase);
+}
+function hasHist(){ return _hist.length>0; }
+function backBtnHTML(){
+  return hasHist()?`<button class="acbtn abback" onclick="goBackStep()"><i class="ti ti-arrow-back-up"></i> Indietro</button>`:'';
+}
+
+function doStart(){pushHist();S.tL=20;S.tT=20;setPhase('COUNTDOWN');}
+function goExercise(){pushHist();clearInterval(S.timer);setPhase('EXERCISE');}
 function serieDone(){
+  pushHist();
   clearInterval(S.timer);S.done[S.exIdx].serie_fatte++;
   const ex=S.scheda.esercizi[S.exIdx];
   if((S.serIdx+1)>=ex.serie){setPhase('CONFIRM');}else{setPhase('REST');}
 }
-function skipRest(){clearInterval(S.timer);nextSerie();}
+function skipRest(){pushHist();clearInterval(S.timer);nextSerie();}
 function nextSerie(){
   S.serIdx++;setPhase('EXERCISE');
   const ex=S.scheda.esercizi[S.exIdx];
   if(ex.tipo==='statico')runTimer(ex.reps,()=>serieDone());
 }
 function skipExercise(){
+  pushHist();
   clearInterval(S.timer);clearInterval(S.chronTimer);
   S.done[S.exIdx].skipped=true;
   S.done[S.exIdx].done=false;
@@ -1330,10 +1378,39 @@ function skipExercise(){
   else{setPhase('CHRON');}
 }
 function setDone(val){
+  pushHist();
   S.done[S.exIdx].done=val;S.serIdx=0;S.exIdx++;
   if(S.exIdx>=S.scheda.esercizi.length){finishSession();}else{setPhase('CHRON');}
 }
-function stopChron(){clearInterval(S.chronTimer);setPhase('READY');}
+function saveQuickEdit(){
+  const nx=S.scheda.esercizi[S.exIdx];
+  if(!nx) return;
+  const serie=parseInt(document.getElementById('qeSerie').value)||nx.serie;
+  const reps=parseFloat(document.getElementById('qeReps').value);
+  const kg=document.getElementById('qeKg').value;
+  nx.serie=serie;
+  if(!isNaN(reps)) nx.reps=reps;
+  nx.kg=kg?parseFloat(kg):null;
+  // Aggiorna anche done[] target per coerenza nello storico
+  if(S.done[S.exIdx]){
+    S.done[S.exIdx].serie_target=nx.serie;
+    S.done[S.exIdx].reps_target=nx.reps;
+    S.done[S.exIdx].kg=nx.kg;
+  }
+  // Salva anche sulla scheda permanente, così la modifica resta per le prossime sessioni
+  const schede=ls(SK);
+  const sidx=schede.findIndex(s=>s.id===S.scheda.id);
+  if(sidx>=0 && schede[sidx].esercizi[S.exIdx]){
+    schede[sidx].esercizi[S.exIdx].serie=nx.serie;
+    schede[sidx].esercizi[S.exIdx].reps=nx.reps;
+    schede[sidx].esercizi[S.exIdx].kg=nx.kg;
+    ss(SK,schede);
+    saveSchedaToDB(schede[sidx]);
+  }
+  setPhase('CHRON'); // ri-renderizza con i nuovi valori nell'anteprima
+  alert2('Esercizio aggiornato.');
+}
+function stopChron(){pushHist();clearInterval(S.chronTimer);setPhase('READY');}
 function finishSession(){
   clearInterval(S.timer);clearInterval(S.chronTimer);
   S.endTime=new Date().toISOString();
@@ -1350,7 +1427,7 @@ function saveSession(nota){
     esercizi:S.done.map(d=>({...d}))
   };
   h.unshift(sessObj);
-  ss(HK,h);closeM('mNota');closeSess();
+  ss(HK,h);closeM('mNota');clearSessionSnapshot();closeSess();
   saveSessionToDB(sessObj);
   document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1359,7 +1436,54 @@ function saveSession(nota){
   document.getElementById('fabBtn').style.display='none';
   renderStorico();
 }
-function endSessConfirm(){confirm2('Termina sessione','Terminare la sessione corrente?',()=>closeSess());}
+function endSessConfirm(){
+  document.getElementById('cfTitle').textContent='Termina sessione';
+  document.getElementById('cfMsg').textContent='Cosa vuoi fare con questo allenamento?';
+  document.getElementById('cfOk').style.display='none';
+  // Riusa il modal di conferma ma con 3 azioni custom
+  const mac=document.getElementById('cfOk').parentElement;
+  mac.innerHTML=`
+    <button class="btn bg" style="flex:1" onclick="closeM('mConfirm')">Annulla</button>
+    <button class="btn bg" style="flex:1" onclick="closeM('mConfirm');pauseSessionForLater()">Metti in pausa</button>
+    <button class="btn bd" style="flex:1" onclick="closeM('mConfirm');confirmDiscardSession()">Cancella</button>
+    <button class="btn ba" style="flex:1" onclick="closeM('mConfirm');endSessionSavePartial()">Salva nello storico</button>`;
+  openM('mConfirm');
+}
+function _restoreConfirmButtons(){
+  const mac=document.getElementById('cfOk').parentElement;
+  mac.innerHTML=`
+    <button class="btn bg" onclick="cfCancel()">Annulla</button>
+    <button class="btn bd" id="cfOk">Conferma</button>`;
+  document.getElementById('cfOk').onclick=()=>{closeM('mConfirm');if(_cfCb)_cfCb();_cfCb=null;_cfCbNo=null;};
+}
+function pauseSessionForLater(){
+  // Lo snapshot è già salvato automaticamente: chiudiamo la sessione attiva
+  // mantenendo il salvataggio, così al prossimo avvio dell'app verrà proposto il recovery.
+  saveSessionSnapshot();
+  clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
+  stopPersistentNotif();
+  if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
+  document.getElementById('sessOv').classList.remove('open');
+  _restoreConfirmButtons();
+  alert2('Allenamento in pausa. Riaprendo CaliMat ti verrà chiesto se riprenderlo.');
+}
+function confirmDiscardSession(){
+  _restoreConfirmButtons();
+  confirm2('Cancella allenamento','Sei sicuro? L\'allenamento NON verrà salvato nello storico.',()=>closeSess());
+}
+function endSessionSavePartial(){
+  _restoreConfirmButtons();
+  clearInterval(S.timer);clearInterval(S.chronTimer);
+  // Marca come "non fatto" tutti gli esercizi non ancora raggiunti/completati
+  S.done.forEach((d,i)=>{
+    if(i>S.exIdx || (i===S.exIdx && d.done===null && !d.skipped)){
+      if(d.done===null && !d.skipped){ d.skipped=true; d.done=false; }
+    }
+  });
+  S.endTime=new Date().toISOString();
+  document.getElementById('sessNota').value='';openM('mNota');
+}
+function endSessConfirmOld(){confirm2('Termina sessione','Terminare la sessione corrente?',()=>closeSess());}
 function closeSess(){
   clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
   stopPersistentNotif();
@@ -1416,6 +1540,9 @@ function openEditH(idx){
   _eHDone=s.esercizi.map(e=>e.done);
   document.getElementById('eHNome').value=s.nomeScheda;
   document.getElementById('eHNota').value=s.nota||'';
+  const d=new Date(s.data);
+  document.getElementById('eHData').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  document.getElementById('eHOra').value=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   document.getElementById('eHExs').innerHTML=s.esercizi.map((e,i)=>`
     <div class="hee">
       <div class="heen">${esc(e.nome)}${e.skipped?'<span style="color:var(--red)"> (saltato)</span>':''}<br>
@@ -1433,6 +1560,17 @@ function saveEditH(){
   const h=ls(HK);const s=h[_eHIdx];
   s.nomeScheda=document.getElementById('eHNome').value.trim()||s.nomeScheda;
   s.nota=document.getElementById('eHNota').value.trim();
+  const dStr=document.getElementById('eHData').value, tStr=document.getElementById('eHOra').value;
+  if(dStr && tStr){
+    const oldDate=new Date(s.data);
+    const newDate=new Date(dStr+'T'+tStr+':00');
+    // Sposta anche endTime mantenendo la stessa durata della sessione
+    if(s.endTime){
+      const durMs=new Date(s.endTime).getTime()-oldDate.getTime();
+      s.endTime=new Date(newDate.getTime()+durMs).toISOString();
+    }
+    s.data=newDate.toISOString();
+  }
   s.esercizi.forEach((e,i)=>{const inp=document.getElementById('hes_'+i);if(inp)e.serie_fatte=parseInt(inp.value)||0;e.done=_eHDone[i];});
   ss(HK,h);closeM('mEditH');renderStorico();
   updateSessionInDB(s);
