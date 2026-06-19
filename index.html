@@ -90,6 +90,18 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .sov{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:600;display:none;flex-direction:column}
 .sov.open{display:flex}
 .sh{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px}
+.shprog-toggle{font-size:14px;font-weight:700;margin-top:2px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none}
+.shprog-toggle::after{content:'▾';font-size:10px;color:var(--text3)}
+.exlist-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:none;align-items:flex-start;justify-content:center;padding:60px 16px 16px}
+.exlist-overlay.open{display:flex}
+.exlist-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);max-width:420px;width:100%;max-height:75vh;overflow-y:auto;padding:16px}
+.exlist-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.exlist-close{cursor:pointer;color:var(--text3);font-size:18px;padding:2px 6px}
+.exlist-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:8px;color:#fff;font-size:14px;font-weight:600}
+.exlist-item.current{background:rgba(255,170,0,.15);color:var(--orange);font-weight:800}
+.exlist-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);min-width:20px}
+.exlist-item.current .exlist-num{color:var(--orange)}
+.exlist-status{margin-left:auto;font-size:12px;color:var(--text3)}
 .pb{height:4px;background:var(--bg3);flex-shrink:0}
 .pf{height:100%;background:var(--accent);transition:width .4s}
 .sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 22px;overflow-y:auto;text-align:center}
@@ -403,13 +415,24 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
   <div class="sh">
     <div style="flex:1;min-width:0">
       <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)" id="shScheda"></div>
-      <div style="font-size:14px;font-weight:700;margin-top:2px;color:var(--text)" id="shProg"></div>
+      <div class="shprog-toggle" id="shProg" onclick="openExList()"></div>
     </div>
     <button class="btn bg" id="btnPip" style="font-size:13px;padding:9px 13px;flex-shrink:0;display:none" onclick="togglePiP()" title="Picture-in-Picture"><i class="ti ti-picture-in-picture"></i></button>
     <button class="btn bd" style="font-size:13px;padding:9px 13px;flex-shrink:0" onclick="endSessConfirm()"><i class="ti ti-x"></i> Termina</button>
   </div>
   <div class="pb"><div class="pf" id="pf" style="width:0%"></div></div>
   <div class="sb" id="sb"></div>
+</div>
+
+<!-- LISTA ESERCIZI SESSIONE -->
+<div class="exlist-overlay" id="exListOverlay" onclick="if(event.target===this)closeExList()">
+  <div class="exlist-box">
+    <div class="exlist-title">
+      <span>Esercizi della sessione</span>
+      <span class="exlist-close" onclick="closeExList()"><i class="ti ti-x"></i></span>
+    </div>
+    <div id="exListBody"></div>
+  </div>
 </div>
 
 <script>
@@ -1135,7 +1158,12 @@ function resumeSession(snap, elapsedSec){
     } else {
       setPhase(snap.phase);
       S.tL=remaining; S.tT=snap.tT;
-      setTDisp(S.tL,S.tT,snap.phase==='REST'?'rest':undefined);
+      let mode;
+      if(snap.phase==='EXERCISE'){
+        const ex=S.scheda.esercizi[S.exIdx];
+        mode=(ex.tipo==='statico'||ex.tipo==='emom')?'hold':undefined;
+      }
+      setTDisp(S.tL,S.tT,mode);
     }
   } else if(snap.phase==='CHRON'){
     setPhase('CHRON');
@@ -1200,6 +1228,31 @@ function sessHeader(){
   const tot=S.scheda.esercizi.reduce((a,e)=>a+e.serie,0);
   const done=S.done.slice(0,S.exIdx).reduce((a,c)=>a+c.serie_target,0)+S.serIdx;
   document.getElementById('pf').style.width=Math.round(done/tot*100)+'%';
+}
+
+function openExList(){
+  const body=document.getElementById('exListBody');
+  body.innerHTML=S.scheda.esercizi.map((ex,i)=>{
+    const isCurrent=i===S.exIdx;
+    const d=S.done[i];
+    let status='';
+    if(i<S.exIdx){
+      if(d&&d.skipped) status='saltato';
+      else if(d&&d.done===false) status='non finito';
+      else status='fatto';
+    } else if(isCurrent){
+      status='in corso';
+    }
+    return `<div class="exlist-item${isCurrent?' current':''}">
+      <span class="exlist-num">${i+1}</span>
+      <span>${esc(ex.nome)}</span>
+      <span class="exlist-status">${status}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('exListOverlay').classList.add('open');
+}
+function closeExList(){
+  document.getElementById('exListOverlay').classList.remove('open');
 }
 
 function exInfoLine(ex){
@@ -1268,24 +1321,24 @@ function setPhase(ph){
     } else if(ex.tipo==='emom'){
       sb.innerHTML=`${exHead}
         <div class="scnt">Ciclo ${S.serIdx+1} / ${ex.serie}</div>
-        ${tRingHTML(ex.reps,ex.reps,'secondi')}
+        ${tRingHTML(ex.reps,ex.reps,'secondi','hold')}
         <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
         <button class="acbtn abskip" onclick="emomCycleDone()">Skip ciclo</button>
         ${skipExBtn}${backBtnHTML()}`;
-      runTimer(ex.reps,()=>emomCycleDone());
+      runTimer(ex.reps,()=>emomCycleDone(),'hold');
     } else {
-      sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.reps,ex.reps,'secondi')}
+      sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.reps,ex.reps,'secondi','hold')}
         <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
         <button class="acbtn abskip" onclick="serieDone()">Skip</button>
         ${skipExBtn}${backBtnHTML()}`;
-      runTimer(ex.reps,()=>serieDone());
+      runTimer(ex.reps,()=>serieDone(),'hold');
     }
   } else if(ph==='REST'){
-    sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.pausa,ex.pausa,'secondi','rest')}
+    sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.pausa,ex.pausa,'secondi')}
       <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
       <button class="acbtn abskip" onclick="skipRest()">Skip</button>
       ${skipExBtn}${backBtnHTML()}`;
-    runTimer(ex.pausa,()=>nextSerie(),'rest');
+    runTimer(ex.pausa,()=>nextSerie());
   } else if(ph==='CHRON'){
     S.chronSec=0;
     const nx=S.scheda.esercizi[S.exIdx];
@@ -1402,13 +1455,9 @@ function confirmDoneWithNote(val){
 
 function tRingHTML(t,tot,lbl,mode){
   const p=tot>0?t/tot:1,dash=502.65,off=dash-dash*p;
-  let clr;
-  if(mode==='rest'){
-    // Pausa: sempre arancione, diventa rosso solo negli ultimissimi secondi
-    clr=t<=3&&tot>3?'var(--red)':'var(--orange)';
-  } else {
-    clr=t<=3&&tot>3?'var(--red)':t<=10&&tot>10?'var(--orange)':'var(--accent)';
-  }
+  const clr=mode==='hold'
+    ? (t<=3&&tot>3?'var(--red)':'var(--accent)')
+    : (t<=3&&tot>3?'var(--red)':'var(--orange)');
   return `<div class="twrap"><svg width="175" height="175" viewBox="0 0 180 180">
     <circle cx="90" cy="90" r="80" fill="none" stroke="var(--bg3)" stroke-width="8"/>
     <circle cx="90" cy="90" r="80" fill="none" stroke="${clr}" stroke-width="8" stroke-linecap="round"
@@ -1420,7 +1469,7 @@ function setTDisp(t,tot,mode){
   if(n)n.textContent=t;
   if(c){
     const p=tot>0?t/tot:1,d=502.65;c.style.strokeDashoffset=d-d*p;
-    c.style.stroke=mode==='rest'?(t<=3&&tot>3?'var(--red)':'var(--orange)'):(t<=3&&tot>3?'var(--red)':t<=10&&tot>10?'var(--orange)':'var(--accent)');
+    c.style.stroke=mode==='hold'?(t<=3&&tot>3?'var(--red)':'var(--accent)'):(t<=3&&tot>3?'var(--red)':'var(--orange)');
   }
 }
 function runTimer(secs,onEnd,mode){
@@ -1478,8 +1527,8 @@ function skipRest(){pushHist();clearInterval(S.timer);nextSerie();}
 function nextSerie(){
   S.serIdx++;setPhase('EXERCISE');
   const ex=S.scheda.esercizi[S.exIdx];
-  if(ex.tipo==='statico')runTimer(ex.reps,()=>serieDone());
-  else if(ex.tipo==='emom')runTimer(ex.reps,()=>emomCycleDone());
+  if(ex.tipo==='statico')runTimer(ex.reps,()=>serieDone(),'hold');
+  else if(ex.tipo==='emom')runTimer(ex.reps,()=>emomCycleDone(),'hold');
 }
 function skipExercise(){
   pushHist();
