@@ -87,7 +87,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .drag-handle{width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:grab;flex-shrink:0;font-size:20px;touch-action:none}
 .drag-handle:active{cursor:grabbing;color:var(--text)}
 /* SESSION */
-.sov{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:600;display:none;flex-direction:column}
+.sov{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:100%;background:var(--bg);z-index:600;display:none;flex-direction:column}
 .sov.open{display:flex}
 .sh{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px}
 .shprog-toggle{font-size:14px;font-weight:700;margin-top:2px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none}
@@ -101,7 +101,18 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .exlist-item.current{background:rgba(255,170,0,.15);color:var(--orange);font-weight:800}
 .exlist-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);min-width:20px}
 .exlist-item.current .exlist-num{color:var(--orange)}
+<<<<<<< HEAD
+.exlist-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exlist-right{margin-left:auto;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.exlist-comp{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);font-weight:600}
+.exlist-item.current .exlist-comp{color:var(--orange)}
+.exlist-status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text3)}
+.exlist-status.st-ok{color:var(--green)}
+.exlist-status.st-bad{color:var(--red)}
+.exlist-status.st-cur{color:var(--orange)}
+=======
 .exlist-status{margin-left:auto;font-size:12px;color:var(--text3)}
+>>>>>>> origin/main
 .pb{height:4px;background:var(--bg3);flex-shrink:0}
 .pf{height:100%;background:var(--accent);transition:width .4s}
 .sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 22px;overflow-y:auto;text-align:center}
@@ -199,12 +210,6 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 #pipContent .pip-timer{font-size:64px;font-weight:500;font-family:monospace;color:#c8f135;line-height:1}
 #pipContent .pip-set{font-size:13px;color:#888;font-weight:700}
 #pipContent .pip-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px}
-/* Notif banner */
-#notifBanner{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#1a1a1a;border-bottom:1px solid #333;padding:10px 18px;display:none;align-items:center;justify-content:space-between;gap:12px;z-index:700;font-size:14px;font-weight:700}
-#notifBanner.show{display:flex}
-#notifBanner .nb-timer{font-family:monospace;font-size:20px;color:#c8f135;min-width:48px}
-#notifBanner .nb-label{flex:1;color:#bbb;font-size:13px}
-#notifBanner .nb-close{color:#555;font-size:18px;cursor:pointer;padding:2px 6px}
 </style>
 </head>
 <body>
@@ -401,13 +406,6 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
       <button class="btn ba" style="flex:2" onclick="saveUpdatedNote()">Salva e continua</button>
     </div>
   </div>
-</div>
-
-<!-- NOTIFICATION BANNER (fallback quando app in background) -->
-<div id="notifBanner">
-  <span class="nb-timer" id="nbTimer">--</span>
-  <span class="nb-label" id="nbLabel">allenamento in corso</span>
-  <span class="nb-close" onclick="hideNotifBanner()"><i class="ti ti-x"></i></span>
 </div>
 
 <!-- SESSION OVERLAY -->
@@ -746,133 +744,12 @@ function updatePiP(){
   }
 }
 
-// ─── PERSISTENT NOTIFICATION (fallback TWA / no PiP) ────────────
-// ─── SERVICE WORKER REGISTRATION ─────────────────────
-let _swReg = null;
+// ─── SERVICE WORKER REGISTRATION (per funzionamento offline PWA) ──
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').then(reg=>{
-    _swReg = reg;
     console.log('SW registrato');
   }).catch(e=>console.warn('SW errore:',e));
 }
-
-// ─── NOTIFICHE PERSISTENTI (via Service Worker) ───────
-let _notifInterval = null;
-let _notifGranted = false;
-let _lastNotifPhase = '';
-let _lastNotifTick = 0;
-
-async function requestNotifPermission(){
-  if(!('Notification' in window)) return;
-  if(Notification.permission === 'granted'){ _notifGranted=true; return; }
-  if(Notification.permission !== 'denied'){
-    const p = await Notification.requestPermission();
-    _notifGranted = (p === 'granted');
-  }
-}
-
-function startPersistentNotif(){
-  clearInterval(_notifInterval);
-  _notifInterval = setInterval(()=>_tickNotif(), 1000);
-}
-
-function stopPersistentNotif(){
-  clearInterval(_notifInterval);
-  _notifInterval = null;
-  // Chiudi notifica SW
-  if(_swReg) _swReg.getNotifications({tag:'calimat-session'}).then(ns=>ns.forEach(n=>n.close()));
-  hideNotifBanner();
-}
-
-function _tickNotif(){
-  if(!S.scheda) return;
-  const ex = S.scheda.esercizi[S.exIdx];
-  if(!ex) return;
-
-  // ── Banner in-page (visibile solo quando schermo è acceso e app in background)
-  const banner = document.getElementById('notifBanner');
-  const nbTimer = document.getElementById('nbTimer');
-  const nbLabel = document.getElementById('nbLabel');
-  if(banner){
-    if(document.hidden){
-      banner.classList.add('show');
-    } else {
-      banner.classList.remove('show');
-    }
-    if(S.phase==='CHRON'){
-      const m=Math.floor(S.chronSec/60), sec=S.chronSec%60;
-      nbTimer.textContent = m+':'+String(sec).padStart(2,'0');
-      nbLabel.textContent = 'riposo libero — '+ex.nome;
-    } else if(S.tL > 0){
-      nbTimer.textContent = S.paused ? '⏸' : String(S.tL);
-      const phLbl = S.phase==='REST'?'pausa':S.phase==='COUNTDOWN'?'preparati':
-        S.phase==='EXERCISE'?(ex.tipo==='statico'?'tieni':ex.tipo==='emom'?'emom ciclo '+(S.serIdx+1)+'/'+ex.serie:'esegui'):'...';
-      nbLabel.textContent = ex.nome+' — '+phLbl;
-    } else {
-      nbTimer.textContent = '▶';
-      nbLabel.textContent = ex.nome;
-    }
-  }
-
-  // ── Notifica di sistema via SW (aggiornata ogni secondo o a cambio fase)
-  if(!_notifGranted || !_swReg) return;
-  const now = Date.now();
-  const phaseChanged = (_lastNotifPhase !== S.phase);
-  const tickDue = (now - _lastNotifTick >= 1000);
-  if(!phaseChanged && !tickDue) return;
-  _lastNotifPhase = S.phase;
-  _lastNotifTick = now;
-
-  let title, body;
-  if(S.phase==='CHRON'){
-    const m=Math.floor(S.chronSec/60), sec=S.chronSec%60;
-    title = `⏱ ${m}:${String(sec).padStart(2,'0')} — riposo libero`;
-    body = ex.nome + ` · serie ${S.serIdx+1}/${ex.serie}`;
-  } else if(S.phase==='REST'){
-    title = `⏸ Pausa — ${S.paused?'⏸':S.tL+'s'}`;
-    body = 'Prossimo: '+ex.nome + ` · serie ${S.serIdx+1}/${ex.serie}`;
-  } else if(S.phase==='EXERCISE'){
-    if(ex.tipo==='statico'){
-      title = `💪 Tieni — ${S.paused?'⏸':S.tL+'s'}`;
-      body = ex.nome + ` · serie ${S.serIdx+1}/${ex.serie}`;
-    } else if(ex.tipo==='emom'){
-      title = `🔁 EMOM — ${S.paused?'⏸':S.tL+'s'}`;
-      body = ex.nome + ` · ciclo ${S.serIdx+1}/${ex.serie}`;
-    } else {
-      title = `💪 Esegui — ${ex.reps} reps`;
-      body = ex.nome + ` · serie ${S.serIdx+1}/${ex.serie}`;
-    }
-  } else if(S.phase==='COUNTDOWN'){
-    title = `▶ Preparati — ${S.tL}s`;
-    body = ex.nome;
-  } else if(S.phase==='CONFIRM'){
-    title = '✅ Serie completata!';
-    body = ex.nome + ` · serie ${S.serIdx}/${ex.serie}`;
-  } else {
-    return;
-  }
-
-  _swReg.showNotification(title, {
-    body,
-    tag: 'calimat-session',
-    renotify: true,
-    silent: true,
-    requireInteraction: false
-  }).catch(()=>{});
-}
-
-function hideNotifBanner(){
-  const b = document.getElementById('notifBanner');
-  if(b) b.classList.remove('show');
-}
-
-document.addEventListener('visibilitychange', ()=>{
-  if(!S.scheda) return;
-  const banner = document.getElementById('notifBanner');
-  if(!banner) return;
-  if(document.hidden) banner.classList.add('show');
-  else banner.classList.remove('show');
-});
 
 // ─── NAV ─────────────────────────────────────────────
 function navTo(btn){
@@ -1138,7 +1015,6 @@ function resumeSession(snap, elapsedSec){
   _hist=[];
 
   reqWL();
-  requestNotifPermission();
   document.getElementById('sessOv').classList.add('open');
   initPiPButton();
 
@@ -1171,7 +1047,6 @@ function resumeSession(snap, elapsedSec){
   } else {
     setPhase(snap.phase||'READY');
   }
-  startPersistentNotif();
 }
 // Salva uno snapshot ogni 2 secondi durante la sessione attiva
 setInterval(()=>{ if(S.scheda && document.getElementById('sessOv').classList.contains('open')) saveSessionSnapshot(); }, 2000);
@@ -1213,12 +1088,10 @@ function startSession(id){
     serie_fatte:0,done:null,skipped:false
   }));
   reqWL();
-  requestNotifPermission();
   document.getElementById('sessOv').classList.add('open');
   initPiPButton();
   _hist=[];
   setPhase('READY');
-  startPersistentNotif();
   saveSessionSnapshot();
 }
 
@@ -1235,6 +1108,23 @@ function openExList(){
   body.innerHTML=S.scheda.esercizi.map((ex,i)=>{
     const isCurrent=i===S.exIdx;
     const d=S.done[i];
+<<<<<<< HEAD
+    let status='',statusClass='';
+    if(i<S.exIdx){
+      if(d&&d.skipped){status='saltato';statusClass='st-bad';}
+      else if(d&&d.done===false){status='non finito';statusClass='st-bad';}
+      else{status='fatto';statusClass='st-ok';}
+    } else if(isCurrent){
+      status='in corso';statusClass='st-cur';
+    }
+    return `<div class="exlist-item${isCurrent?' current':''}">
+      <span class="exlist-num">${i+1}</span>
+      <span class="exlist-name">${esc(ex.nome)}</span>
+      <span class="exlist-right">
+        <span class="exlist-comp">${exCompactInfo(ex)}</span>
+        ${status?`<span class="exlist-status ${statusClass}">${status}</span>`:''}
+      </span>
+=======
     let status='';
     if(i<S.exIdx){
       if(d&&d.skipped) status='saltato';
@@ -1247,6 +1137,7 @@ function openExList(){
       <span class="exlist-num">${i+1}</span>
       <span>${esc(ex.nome)}</span>
       <span class="exlist-status">${status}</span>
+>>>>>>> origin/main
     </div>`;
   }).join('');
   document.getElementById('exListOverlay').classList.add('open');
@@ -1255,6 +1146,22 @@ function closeExList(){
   document.getElementById('exListOverlay').classList.remove('open');
 }
 
+<<<<<<< HEAD
+function exCompactInfo(ex){
+  // Format: 5x10 22kg  OR  5x30s  OR  EMOM 5x55s  (senza pausa, per la lista esercizi)
+  if(ex.tipo==='emom'){
+    let t='EMOM '+ex.serie+'x'+ex.reps+'s';
+    if(ex.kg) t+=' '+ex.kg+'kg';
+    return t;
+  }
+  const repsPart=ex.tipo==='statico'?ex.reps+'s':ex.reps;
+  let t=ex.serie+'x'+repsPart;
+  if(ex.kg) t+=' '+ex.kg+'kg';
+  return t;
+}
+
+=======
+>>>>>>> origin/main
 function exInfoLine(ex){
   // Format: 5x10 22kg — pausa 90s  OR  5x30s — pausa 60s  OR  EMOM 5x55s
   if(ex.tipo==='emom'){
@@ -1612,7 +1519,6 @@ function pauseSessionForLater(){
   // mantenendo il salvataggio, così al prossimo avvio dell'app verrà proposto il recovery.
   saveSessionSnapshot();
   clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
-  stopPersistentNotif();
   if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
   document.getElementById('sessOv').classList.remove('open');
   alert2('Allenamento in pausa. Riaprendo CaliMat ti verrà chiesto se riprenderlo.');
@@ -1635,7 +1541,6 @@ function endSessionSavePartial(){
 
 function closeSess(){
   clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
-  stopPersistentNotif();
   clearSessionSnapshot();
   if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
   document.getElementById('sessOv').classList.remove('open');
