@@ -112,13 +112,17 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .abpause{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
 .abskip{background:var(--bg3);color:var(--text2);border:1px solid var(--border);font-size:15px;padding:13px}
 .abskipex{background:rgba(255,68,68,.1);color:var(--red);border:1px solid rgba(255,68,68,.25);font-size:14px;padding:11px}
-.abback{background:transparent;color:var(--text3);border:1px solid var(--border);font-size:13px;padding:10px}
+.abback{background:transparent;color:var(--text3);border:1px solid var(--border);font-size:13px;padding:10px;margin-top:8px}
 .abquicksave{background:var(--accent);color:#000;font-size:14px;padding:12px;margin-top:10px;margin-bottom:0}
 .quick-edit-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:14px 0;text-align:left}
-.quick-edit-title{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase;margin-bottom:10px}
+.quick-edit-title{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none}
+.quick-edit-title::after{content:'▾';font-size:10px;transition:transform .15s}
+.quick-edit-box.collapsed .quick-edit-title::after{transform:rotate(-90deg)}
+.quick-edit-box.collapsed .quick-edit-body{display:none}
+.quick-edit-body{margin-top:10px}
 .qe-current-settings{font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
-.quick-edit-row{display:flex;gap:8px;flex-wrap:wrap}
-.qei{flex:1 1 70px;display:flex;flex-direction:column;gap:4px;min-width:70px}
+.quick-edit-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px}
+.qei{display:flex;flex-direction:column;gap:4px;min-width:0}
 .qei label{font-size:11px;color:var(--text3);font-weight:600}
 .qei input{width:100%;padding:9px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:15px;font-family:'DM Mono',monospace;text-align:center}
 .cdbx p{font-size:15px;color:var(--text2);text-align:center;margin-bottom:14px}
@@ -1131,7 +1135,7 @@ function resumeSession(snap, elapsedSec){
     } else {
       setPhase(snap.phase);
       S.tL=remaining; S.tT=snap.tT;
-      setTDisp(S.tL,S.tT);
+      setTDisp(S.tL,S.tT,snap.phase==='REST'?'rest':undefined);
     }
   } else if(snap.phase==='CHRON'){
     setPhase('CHRON');
@@ -1277,11 +1281,11 @@ function setPhase(ph){
       runTimer(ex.reps,()=>serieDone());
     }
   } else if(ph==='REST'){
-    sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.pausa,ex.pausa,'secondi')}
+    sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.pausa,ex.pausa,'secondi','rest')}
       <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
       <button class="acbtn abskip" onclick="skipRest()">Skip</button>
       ${skipExBtn}${backBtnHTML()}`;
-    runTimer(ex.pausa,()=>nextSerie());
+    runTimer(ex.pausa,()=>nextSerie(),'rest');
   } else if(ph==='CHRON'){
     S.chronSec=0;
     const nx=S.scheda.esercizi[S.exIdx];
@@ -1291,8 +1295,9 @@ function setPhase(ph){
       <div class="chron-label">cronometro</div>
       ${nextExPreview('Prossimo esercizio')}
       <button class="acbtn abstart" onclick="stopChron()">Stop — prossimo esercizio</button>
-      ${nx?`<div class="quick-edit-box" id="quickEditBox">
-        <div class="quick-edit-title">Modifica rapida</div>
+      ${nx?`<div class="quick-edit-box collapsed" id="quickEditBox">
+        <div class="quick-edit-title" onclick="toggleQuickEdit('quickEditBox')">Modifica rapida</div>
+        <div class="quick-edit-body">
         <div class="quick-edit-row">
           <div class="qei"><label>Serie</label><input type="number" min="1" id="qeSerie" value="${nx.serie}"></div>
           <div class="qei"><label>${nx.tipo==='emom'?'Sec':nx.tipo==='statico'?'Secondi':'Reps'}</label><input type="number" min="0" id="qeReps" value="${nx.reps}"></div>
@@ -1300,6 +1305,7 @@ function setPhase(ph){
           <div class="qei" style="${nx.tipo==='emom'?'opacity:.35':''}"><label>Pausa (s)</label><input type="number" min="0" id="qePausa" value="${nx.tipo==='emom'?'':nx.pausa}" ${nx.tipo==='emom'?'disabled':''}></div>
         </div>
         <button class="acbtn abquicksave" onclick="saveQuickEdit()">Salva modifiche esercizio</button>
+        </div>
       </div>`:''}
       ${backBtnHTML()}`;
     S.chronTimer=setInterval(()=>{
@@ -1320,8 +1326,9 @@ function setPhase(ph){
         <div class="note-update-label">Aggiorna nota esercizio</div>
         <textarea class="ta" id="noteUpdateTA" style="min-height:44px;font-size:14px" placeholder="Nota per la prossima volta...">${esc(ex.nota||'')}</textarea>
       </div>
-      <div class="quick-edit-box" id="confirmEditBox">
-        <div class="quick-edit-title">Imposta per la prossima volta</div>
+      <div class="quick-edit-box collapsed" id="confirmEditBox">
+        <div class="quick-edit-title" onclick="toggleQuickEdit('confirmEditBox')">Imposta per la prossima volta</div>
+        <div class="quick-edit-body">
         <div class="quick-edit-row">
           <div class="qei"><label>Serie</label><input type="number" min="1" id="cqSerie" value="${ex.serie}"></div>
           <div class="qei"><label>${ex.tipo==='emom'?'Sec':ex.tipo==='statico'?'Secondi':'Reps'}</label><input type="number" min="0" id="cqReps" value="${ex.reps}"></div>
@@ -1329,6 +1336,7 @@ function setPhase(ph){
           <div class="qei" style="${ex.tipo==='emom'?'opacity:.35':''}"><label>Pausa (s)</label><input type="number" min="0" id="cqPausa" value="${ex.tipo==='emom'?'':ex.pausa}" ${ex.tipo==='emom'?'disabled':''}></div>
         </div>
         <button class="acbtn abquicksave" onclick="saveConfirmEdit()">Salva modifiche esercizio</button>
+        </div>
       </div>
       <div class="cdbx">
         <p>Hai completato tutte le ${ex.serie} serie?</p>
@@ -1339,6 +1347,10 @@ function setPhase(ph){
       </div>
       ${backBtnHTML()}`;
   }
+}
+function toggleQuickEdit(boxId){
+  const box=document.getElementById(boxId);
+  if(box) box.classList.toggle('collapsed');
 }
 function saveConfirmEdit(){
   const ex=S.scheda.esercizi[S.exIdx];
@@ -1388,27 +1400,36 @@ function confirmDoneWithNote(val){
   setDone(val);
 }
 
-function tRingHTML(t,tot,lbl){
+function tRingHTML(t,tot,lbl,mode){
   const p=tot>0?t/tot:1,dash=502.65,off=dash-dash*p;
-  const clr=t<=3&&tot>3?'var(--red)':t<=10&&tot>10?'var(--orange)':'var(--accent)';
+  let clr;
+  if(mode==='rest'){
+    // Pausa: sempre arancione, diventa rosso solo negli ultimissimi secondi
+    clr=t<=3&&tot>3?'var(--red)':'var(--orange)';
+  } else {
+    clr=t<=3&&tot>3?'var(--red)':t<=10&&tot>10?'var(--orange)':'var(--accent)';
+  }
   return `<div class="twrap"><svg width="175" height="175" viewBox="0 0 180 180">
     <circle cx="90" cy="90" r="80" fill="none" stroke="var(--bg3)" stroke-width="8"/>
     <circle cx="90" cy="90" r="80" fill="none" stroke="${clr}" stroke-width="8" stroke-linecap="round"
       stroke-dasharray="${dash}" stroke-dashoffset="${off}" id="tcirc"/>
   </svg><span class="tnum" id="tnum">${t}</span><span class="tlbl">${lbl}</span></div>`;
 }
-function setTDisp(t,tot){
+function setTDisp(t,tot,mode){
   const n=document.getElementById('tnum'),c=document.getElementById('tcirc');
   if(n)n.textContent=t;
-  if(c){const p=tot>0?t/tot:1,d=502.65;c.style.strokeDashoffset=d-d*p;c.style.stroke=t<=3&&tot>3?'var(--red)':t<=10&&tot>10?'var(--orange)':'var(--accent)';}
+  if(c){
+    const p=tot>0?t/tot:1,d=502.65;c.style.strokeDashoffset=d-d*p;
+    c.style.stroke=mode==='rest'?(t<=3&&tot>3?'var(--red)':'var(--orange)'):(t<=3&&tot>3?'var(--red)':t<=10&&tot>10?'var(--orange)':'var(--accent)');
+  }
 }
-function runTimer(secs,onEnd){
+function runTimer(secs,onEnd,mode){
   S.tL=secs;S.tT=secs;clearInterval(S.timer);
   S.timer=setInterval(()=>{
     if(S.paused)return;S.tL--;
     if(S.tL<=3&&S.tL>0)bS();
     if(S.tL<=0){clearInterval(S.timer);bL();onEnd();return;}
-    setTDisp(S.tL,S.tT);
+    setTDisp(S.tL,S.tT,mode);
     const pb=document.getElementById('bpause');if(pb)pb.textContent=S.paused?'Riprendi':'Pausa';
   },1000);
 }
