@@ -101,7 +101,6 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .exlist-item.current{background:rgba(255,170,0,.15);color:var(--orange);font-weight:800}
 .exlist-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);min-width:20px}
 .exlist-item.current .exlist-num{color:var(--orange)}
-<<<<<<< HEAD
 .exlist-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .exlist-right{margin-left:auto;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .exlist-comp{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);font-weight:600}
@@ -110,9 +109,6 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .exlist-status.st-ok{color:var(--green)}
 .exlist-status.st-bad{color:var(--red)}
 .exlist-status.st-cur{color:var(--orange)}
-=======
-.exlist-status{margin-left:auto;font-size:12px;color:var(--text3)}
->>>>>>> origin/main
 .pb{height:4px;background:var(--bg3);flex-shrink:0}
 .pf{height:100%;background:var(--accent);transition:width .4s}
 .sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 22px;overflow-y:auto;text-align:center}
@@ -1108,7 +1104,6 @@ function openExList(){
   body.innerHTML=S.scheda.esercizi.map((ex,i)=>{
     const isCurrent=i===S.exIdx;
     const d=S.done[i];
-<<<<<<< HEAD
     let status='',statusClass='';
     if(i<S.exIdx){
       if(d&&d.skipped){status='saltato';statusClass='st-bad';}
@@ -1124,20 +1119,6 @@ function openExList(){
         <span class="exlist-comp">${exCompactInfo(ex)}</span>
         ${status?`<span class="exlist-status ${statusClass}">${status}</span>`:''}
       </span>
-=======
-    let status='';
-    if(i<S.exIdx){
-      if(d&&d.skipped) status='saltato';
-      else if(d&&d.done===false) status='non finito';
-      else status='fatto';
-    } else if(isCurrent){
-      status='in corso';
-    }
-    return `<div class="exlist-item${isCurrent?' current':''}">
-      <span class="exlist-num">${i+1}</span>
-      <span>${esc(ex.nome)}</span>
-      <span class="exlist-status">${status}</span>
->>>>>>> origin/main
     </div>`;
   }).join('');
   document.getElementById('exListOverlay').classList.add('open');
@@ -1146,7 +1127,6 @@ function closeExList(){
   document.getElementById('exListOverlay').classList.remove('open');
 }
 
-<<<<<<< HEAD
 function exCompactInfo(ex){
   // Format: 5x10 22kg  OR  5x30s  OR  EMOM 5x55s  (senza pausa, per la lista esercizi)
   if(ex.tipo==='emom'){
@@ -1160,8 +1140,6 @@ function exCompactInfo(ex){
   return t;
 }
 
-=======
->>>>>>> origin/main
 function exInfoLine(ex){
   // Format: 5x10 22kg — pausa 90s  OR  5x30s — pausa 60s  OR  EMOM 5x55s
   if(ex.tipo==='emom'){
