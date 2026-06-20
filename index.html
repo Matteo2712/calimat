@@ -119,8 +119,9 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .scnt{font-family:'DM Mono',monospace;font-size:42px;font-weight:500;color:var(--accent);margin-bottom:24px;letter-spacing:-1px}
 .twrap{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
 .twrap svg{transform:rotate(-90deg)}
-.tnum{position:absolute;font-family:'DM Mono',monospace;font-size:56px;font-weight:500;line-height:1;color:var(--text)}
-.tlbl{position:absolute;bottom:-20px;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.tcenter{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tnum{font-family:'DM Mono',monospace;font-size:56px;font-weight:500;line-height:1;color:var(--text)}
+.tsub{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:3px}
 .rdis{display:flex;flex-direction:column;align-items:center;justify-content:center;width:168px;height:168px;border-radius:50%;border:8px solid var(--bg3);margin-bottom:24px}
 .rnum{font-family:'DM Mono',monospace;font-size:64px;font-weight:500;color:var(--green);line-height:1}
 .rlbl{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:4px}
@@ -153,8 +154,8 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 /* NEXT EX PREVIEW in chron */
 .next-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;text-align:left;width:100%}
 .next-preview-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
-.next-preview-name{font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px}
-.next-preview-info{font-size:13px;color:var(--text2);font-weight:600;margin-bottom:4px}
+.next-preview-name{font-size:21px;font-weight:800;color:var(--text);margin-bottom:5px}
+.next-preview-info{font-size:16px;color:var(--text2);font-weight:600;margin-bottom:4px}
 .next-preview-note{font-size:13px;color:var(--orange);font-weight:600;margin-top:4px}
 /* NOTE UPDATE */
 .note-update-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;width:100%}
@@ -256,7 +257,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.2</span></div>
+  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.3</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openM('mSettings')">
       <div class="sync-dot" id="syncDot"></div>
@@ -1148,7 +1149,7 @@ function exInfoLine(ex){
   const repsPart=ex.tipo==='statico'?ex.reps+'s':ex.reps;
   let main=ex.serie+'x'+repsPart;
   if(ex.kg) main+=' '+ex.kg+'kg';
-  return main+' — pausa '+ex.pausa+'s';
+  return main+' - pausa '+ex.pausa+'s';
 }
 
 function setPhase(ph){
@@ -1181,7 +1182,7 @@ function setPhase(ph){
     sb.innerHTML=`
       <div class="sphase">preparati</div>
       ${nextExPreview('Prossimo esercizio')}
-      ${tRingHTML(20,20,'secondi')}
+      ${tRingHTML(20,20,'sec')}
       <button class="acbtn abstart" onclick="doStart()">START</button>
       <button class="acbtn abskip" onclick="goExercise()">Skip</button>
       ${skipExBtn}${backBtnHTML()}`;
@@ -1190,7 +1191,7 @@ function setPhase(ph){
     sb.innerHTML=`
       <div class="sphase">preparati</div>
       ${nextExPreview('Prossimo esercizio')}
-      ${tRingHTML(S.tL,S.tT,'secondi')}
+      ${tRingHTML(S.tL,S.tT,'sec')}
       <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
       <button class="acbtn abskip" onclick="goExercise()">Skip</button>
       ${skipExBtn}${backBtnHTML()}`;
@@ -1204,20 +1205,20 @@ function setPhase(ph){
     } else if(ex.tipo==='emom'){
       sb.innerHTML=`${exHead}
         <div class="scnt">Ciclo ${S.serIdx+1} / ${ex.serie}</div>
-        ${tRingHTML(ex.reps,ex.reps,'secondi','hold')}
+        ${tRingHTML(ex.reps,ex.reps,'sec','hold')}
         <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
         <button class="acbtn abskip" onclick="emomCycleDone()">Skip ciclo</button>
         ${skipExBtn}${backBtnHTML()}`;
       runTimer(ex.reps,()=>emomCycleDone(),'hold');
     } else {
-      sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.reps,ex.reps,'secondi','hold')}
+      sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.reps,ex.reps,'sec','hold')}
         <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
         <button class="acbtn abskip" onclick="serieDone()">Skip</button>
         ${skipExBtn}${backBtnHTML()}`;
       runTimer(ex.reps,()=>serieDone(),'hold');
     }
   } else if(ph==='REST'){
-    sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.pausa,ex.pausa,'secondi')}
+    sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.pausa,ex.pausa,'sec')}
       <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
       <button class="acbtn abskip" onclick="skipRest()">Skip</button>
       ${skipExBtn}${backBtnHTML()}`;
@@ -1230,7 +1231,7 @@ function setPhase(ph){
       <div class="sphase">riposo libero</div>
       <div class="chron-time" id="chronDisp">${cm}:${String(cs).padStart(2,'0')}</div>
       ${nextExPreview('Prossimo esercizio')}
-      <button class="acbtn abstart" onclick="stopChron()">Stop — prossimo esercizio</button>
+      <button class="acbtn abstart" onclick="stopChron()">Prossimo esercizio</button>
       ${nx?`<div class="quick-edit-box collapsed" id="quickEditBox">
         <div class="quick-edit-title" onclick="toggleQuickEdit('quickEditBox')">Modifica rapida</div>
         <div class="quick-edit-body">
@@ -1345,7 +1346,7 @@ function tRingHTML(t,tot,lbl,mode){
     <circle cx="90" cy="90" r="80" fill="none" stroke="var(--bg3)" stroke-width="8"/>
     <circle cx="90" cy="90" r="80" fill="none" stroke="${clr}" stroke-width="8" stroke-linecap="round"
       stroke-dasharray="${dash}" stroke-dashoffset="${off}" id="tcirc"/>
-  </svg><span class="tnum" id="tnum">${t}</span><span class="tlbl">${lbl}</span></div>`;
+  </svg><div class="tcenter"><span class="tnum" id="tnum">${t}</span><span class="tsub">${lbl}</span></div></div>`;
 }
 function setTDisp(t,tot,mode){
   const n=document.getElementById('tnum'),c=document.getElementById('tcirc');
