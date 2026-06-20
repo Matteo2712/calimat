@@ -148,7 +148,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .cdbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cdyes{background:rgba(68,255,136,.15);color:var(--green);border:1px solid rgba(68,255,136,.35);border-radius:var(--radius);padding:17px;font-size:17px;font-weight:800;cursor:pointer}
 .cdno{background:rgba(255,68,68,.12);color:var(--red);border:1px solid rgba(255,68,68,.25);border-radius:var(--radius);padding:17px;font-size:17px;font-weight:800;cursor:pointer}
-.chron-time{font-family:'DM Mono',monospace;font-size:72px;font-weight:500;color:var(--text);line-height:1}
+.chron-time{font-family:'DM Mono',monospace;font-size:72px;font-weight:500;color:var(--text);line-height:1;margin-bottom:14px}
 .chron-label{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:6px;margin-bottom:8px}
 /* NEXT EX PREVIEW in chron */
 .next-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;text-align:left;width:100%}
@@ -1127,7 +1127,7 @@ function openExList(){
       <span class="exlist-num">${i+1}</span>
       <span class="exlist-name">${esc(ex.nome)}</span>
       <span class="exlist-right">
-        <span class="exlist-comp">${exCompactInfo(ex)}</span>
+        <span class="exlist-comp">${exTarget(d||{tipo:ex.tipo,serie_target:ex.serie,reps_target:ex.reps,kg:ex.kg})}</span>
         ${status?`<span class="exlist-status ${statusClass}">${status}</span>`:''}
       </span>
     </div>`;
@@ -1136,19 +1136,6 @@ function openExList(){
 }
 function closeExList(){
   document.getElementById('exListOverlay').classList.remove('open');
-}
-
-function exCompactInfo(ex){
-  // Format: 5x10 22kg  OR  5x30s  OR  EMOM 5x55s  (senza pausa, per la lista esercizi)
-  if(ex.tipo==='emom'){
-    let t='EMOM '+ex.serie+'x'+ex.reps+'s';
-    if(ex.kg) t+=' '+ex.kg+'kg';
-    return t;
-  }
-  const repsPart=ex.tipo==='statico'?ex.reps+'s':ex.reps;
-  let t=ex.serie+'x'+repsPart;
-  if(ex.kg) t+=' '+ex.kg+'kg';
-  return t;
 }
 
 function exInfoLine(ex){
@@ -1242,7 +1229,6 @@ function setPhase(ph){
     sb.innerHTML=`
       <div class="sphase">riposo libero</div>
       <div class="chron-time" id="chronDisp">${cm}:${String(cs).padStart(2,'0')}</div>
-      <div class="chron-label">cronometro</div>
       ${nextExPreview('Prossimo esercizio')}
       <button class="acbtn abstart" onclick="stopChron()">Stop — prossimo esercizio</button>
       ${nx?`<div class="quick-edit-box collapsed" id="quickEditBox">
@@ -1270,7 +1256,7 @@ function setPhase(ph){
       <div class="sexname">${esc(ex.nome)}</div>
       <div class="qe-current-settings">${esc(exInfoLine(ex))}</div>
       <div style="margin:14px 0 10px">
-        <div style="font-size:28px;font-weight:900;color:var(--green);font-family:'DM Mono',monospace">esercizio completato</div>
+        <div style="font-size:26px;font-weight:900;color:var(--green);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px">esercizio completato</div>
       </div>
       <div class="note-update-box">
         <div class="note-update-label">Aggiorna nota esercizio</div>
