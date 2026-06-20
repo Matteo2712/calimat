@@ -165,7 +165,13 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .hdate{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase}
 .hname{font-size:16px;font-weight:800;color:var(--text)}
 .hex{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text2);padding:3px 0}
-.hex.skipped{color:var(--red);text-decoration:line-through}
+.hex.skipped{color:var(--red)}
+.hex-toggle-box{margin-top:8px}
+.hex-toggle-title{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none;padding-top:8px;border-top:1px solid var(--border)}
+.hex-toggle-title::after{content:'▾';font-size:10px;transition:transform .15s}
+.hex-toggle-box.collapsed .hex-toggle-title::after{transform:rotate(-90deg)}
+.hex-toggle-box.collapsed .hex-list{display:none}
+.hex-list{margin-top:8px}
 .div{border:none;border-top:1px solid var(--border);margin:10px 0}
 .hee{display:flex;align-items:center;gap:7px;padding:9px 0;border-bottom:1px solid var(--border)}
 .hee:last-child{border-bottom:none}
@@ -176,13 +182,16 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .hdtog{width:34px;height:34px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
 .hdtog.done{background:rgba(68,255,136,.15);border-color:rgba(68,255,136,.35)}
 .hdtog.notdone{background:rgba(255,68,68,.12);border-color:rgba(255,68,68,.25)}
+.hdtog.skipped{background:rgba(255,68,68,.05);border-color:rgba(255,68,68,.25)}
 /* STATS */
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
 .sv{font-size:30px;font-weight:800;color:var(--accent);font-family:'DM Mono',monospace}
 .sl{font-size:12px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-top:4px}
 .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cday{aspect-ratio:1;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'DM Mono',monospace;color:var(--text3)}
+.cday{aspect-ratio:1;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);cursor:pointer}
+.cday:empty{cursor:default}
+.cday.sel{box-shadow:0 0 0 2px var(--accent) inset}
 .cday.tr{background:rgba(200,241,53,.22);color:var(--accent);font-weight:700}
 .cday.td{border:1px solid var(--accent)}
 .clbls{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:5px}
@@ -1048,6 +1057,7 @@ function resumeSession(snap, elapsedSec){
 setInterval(()=>{ if(S.scheda && document.getElementById('sessOv').classList.contains('open')) saveSessionSnapshot(); }, 2000);
 
 let _hist=[];
+let _confirmEnterTS=null, _chronCarrySec=0;
 let S={
   scheda:null,exIdx:0,serIdx:0,phase:'',
   timer:null,tL:0,tT:0,paused:false,
@@ -1073,6 +1083,7 @@ function openPickScheda(){
 function startSession(id){
   const s=ls(SK).find(x=>x.id===id);if(!s)return;
   closeM('mPick');
+  _confirmEnterTS=null;_chronCarrySec=0;
   S.scheda=JSON.parse(JSON.stringify(s));
   S.exIdx=0;S.serIdx=0;S.paused=false;
   S.startTime=new Date().toISOString();
@@ -1159,9 +1170,9 @@ function setPhase(ph){
   const ex=S.scheda.esercizi[S.exIdx];
   const sb=document.getElementById('sb');
   const serLbl=`<div class="scnt">${S.serIdx+1} / ${ex.serie}</div>`;
-  const phLbl=ph==='READY'?'preparati':ph==='EXERCISE'?(ex.tipo==='dinamico'?'esegui':'tieni'):ph==='REST'?'riposo':ph==='CHRON'?'riposo libero':'...';
+  const phLbl=ph==='READY'?'preparati':ph==='EXERCISE'?(ex.tipo==='dinamico'?'esegui':ex.tipo==='emom'?'':'tieni'):ph==='REST'?'riposo':ph==='CHRON'?'riposo libero':'...';
   const exHead=`
-    <div class="sphase">${phLbl}</div>
+    ${phLbl?`<div class="sphase">${phLbl}</div>`:''}
     <div class="sexname">${esc(ex.nome)}</div>
     ${ex.nota?`<div class="snote">${esc(ex.nota)}</div>`:''}
     ${ex.kg?`<div class="skginfo">${ex.kg} kg</div>`:''}`;
@@ -1183,7 +1194,7 @@ function setPhase(ph){
     sb.innerHTML=`
       <div class="sphase">preparati</div>
       ${nextExPreview('Prossimo esercizio')}
-      ${serLbl}${tRingHTML(20,20,'secondi')}
+      ${tRingHTML(20,20,'secondi')}
       <button class="acbtn abstart" onclick="doStart()">START</button>
       <button class="acbtn abskip" onclick="goExercise()">Skip</button>
       ${skipExBtn}${backBtnHTML()}`;
@@ -1192,7 +1203,7 @@ function setPhase(ph){
     sb.innerHTML=`
       <div class="sphase">preparati</div>
       ${nextExPreview('Prossimo esercizio')}
-      ${serLbl}${tRingHTML(S.tL,S.tT,'secondi')}
+      ${tRingHTML(S.tL,S.tT,'secondi')}
       <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
       <button class="acbtn abskip" onclick="goExercise()">Skip</button>
       ${skipExBtn}${backBtnHTML()}`;
@@ -1225,11 +1236,12 @@ function setPhase(ph){
       ${skipExBtn}${backBtnHTML()}`;
     runTimer(ex.pausa,()=>nextSerie());
   } else if(ph==='CHRON'){
-    S.chronSec=0;
+    S.chronSec=_chronCarrySec||0;_chronCarrySec=0;
     const nx=S.scheda.esercizi[S.exIdx];
+    const cm=Math.floor(S.chronSec/60),cs=S.chronSec%60;
     sb.innerHTML=`
       <div class="sphase">riposo libero</div>
-      <div class="chron-time" id="chronDisp">0:00</div>
+      <div class="chron-time" id="chronDisp">${cm}:${String(cs).padStart(2,'0')}</div>
       <div class="chron-label">cronometro</div>
       ${nextExPreview('Prossimo esercizio')}
       <button class="acbtn abstart" onclick="stopChron()">Stop — prossimo esercizio</button>
@@ -1253,12 +1265,12 @@ function setPhase(ph){
       if(el)el.textContent=m+':'+String(sec).padStart(2,'0');
     },1000);
   } else if(ph==='CONFIRM'){
+    _confirmEnterTS=Date.now();
     sb.innerHTML=`
-      <div class="sphase">esercizio completato</div>
       <div class="sexname">${esc(ex.nome)}</div>
       <div class="qe-current-settings">${esc(exInfoLine(ex))}</div>
       <div style="margin:14px 0 10px">
-        <div style="font-size:52px;font-weight:900;color:var(--accent);font-family:'DM Mono',monospace">OK</div>
+        <div style="font-size:28px;font-weight:900;color:var(--green);font-family:'DM Mono',monospace">esercizio completato</div>
       </div>
       <div class="note-update-box">
         <div class="note-update-label">Aggiorna nota esercizio</div>
@@ -1426,6 +1438,7 @@ function skipExercise(){
 }
 function setDone(val){
   pushHist();
+  if(_confirmEnterTS){ _chronCarrySec=Math.max(0,Math.floor((Date.now()-_confirmEnterTS)/1000)); _confirmEnterTS=null; }
   S.done[S.exIdx].done=val;S.serIdx=0;S.exIdx++;
   if(S.exIdx>=S.scheda.esercizi.length){finishSession();}else{setPhase('CHRON');}
 }
@@ -1558,23 +1571,26 @@ function renderStorico(){
         </div>
         <button class="bi" onclick="openEditH(${i})"><i class="ti ti-edit"></i></button>
       </div>
-      <div class="div"></div>
-      <div>${s.esercizi.map(e=>`
-        <div class="hex${e.skipped?' skipped':''}">
-          <span>${esc(e.nome)}${e.skipped?' (saltato)':''}</span>
-          <span style="display:flex;align-items:center;gap:7px">
-            <span style="font-family:'DM Mono',monospace;font-size:12px">${e.skipped?'—':exTarget(e)}</span>
-            ${e.done===true&&!e.skipped?'<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>':e.done===false&&!e.skipped?'<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>':''}
-          </span>
-        </div>`).join('')}</div>
+      <div class="hex-toggle-box collapsed" id="histEx_${i}">
+        <div class="hex-toggle-title" onclick="toggleQuickEdit('histEx_${i}')">${s.esercizi.length} esercizi</div>
+        <div class="hex-list">${s.esercizi.map(e=>`
+          <div class="hex${e.skipped?' skipped':''}">
+            <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
+            <span style="display:flex;align-items:center;gap:7px">
+              <span style="font-family:'DM Mono',monospace;font-size:12px">${e.skipped?'—':exTarget(e)}</span>
+              ${e.skipped?'<i class="ti ti-minus" style="color:var(--red);font-size:16px"></i>':e.done===true?'<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>':e.done===false?'<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>':''}
+            </span>
+          </div>`).join('')}</div>
+      </div>
     </div>`;
   }).join('');
 }
 
-let _eHIdx=null,_eHDone=[];
+let _eHIdx=null,_eHState=[];
+function hStateOf(e){ return e.skipped ? 'skipped' : (e.done===true ? 'done' : 'notdone'); }
 function openEditH(idx){
   _eHIdx=idx;const s=ls(HK)[idx];
-  _eHDone=s.esercizi.map(e=>e.done);
+  _eHState=s.esercizi.map(hStateOf);
   document.getElementById('eHNome').value=s.nomeScheda;
   document.getElementById('eHNota').value=s.nota||'';
   const d=new Date(s.data);
@@ -1588,16 +1604,27 @@ function openEditH(idx){
   }
   document.getElementById('eHExs').innerHTML=s.esercizi.map((e,i)=>`
     <div class="hee">
-      <div class="heen">${esc(e.nome)}${e.skipped?'<span style="color:var(--red)"> (saltato)</span>':''}<br>
+      <div class="heen">
+        <span id="hname_${i}" style="${e.skipped?'text-decoration:line-through':''}">${esc(e.nome)}</span><span id="hsal_${i}" style="color:var(--red)">${e.skipped?' (saltato)':''}</span><br>
         <span>${e.tipo==='emom'?'EMOM '+e.reps_target+'s/ciclo':e.tipo==='statico'?e.reps_target+'s':e.reps_target+' reps'}${e.kg?' — '+e.kg+'kg':''}${e.tipo!=='emom'?' — pausa '+e.pausa+'s':''}</span>
       </div>
       <span style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace">${e.serie_fatte}/${e.serie_target}</span>
-      <button class="hdtog ${e.done===true?'done':e.done===false?'notdone':''}" id="htog_${i}" onclick="cycleHDone(${i})">${dIcon(e.done)}</button>
+      <button class="hdtog ${_eHState[i]}" id="htog_${i}" onclick="cycleHState(${i})">${dIcon(_eHState[i])}</button>
     </div>`).join('');
   openM('mEditH');
 }
-function dIcon(v){return v===true?'<i class="ti ti-check" style="color:var(--green)"></i>':v===false?'<i class="ti ti-x" style="color:var(--red)"></i>':'<i class="ti ti-minus" style="color:var(--text3)"></i>';}
-function cycleHDone(i){_eHDone[i]=_eHDone[i]===null?true:_eHDone[i]===true?false:null;const b=document.getElementById('htog_'+i);b.className='hdtog'+(_eHDone[i]===true?' done':_eHDone[i]===false?' notdone':'');b.innerHTML=dIcon(_eHDone[i]);}
+function dIcon(st){return st==='done'?'<i class="ti ti-check" style="color:var(--green)"></i>':st==='skipped'?'<i class="ti ti-minus" style="color:var(--red)"></i>':'<i class="ti ti-x" style="color:var(--red)"></i>';}
+function cycleHState(i){
+  _eHState[i]=_eHState[i]==='done'?'notdone':_eHState[i]==='notdone'?'skipped':'done';
+  const st=_eHState[i];
+  const b=document.getElementById('htog_'+i);
+  b.className='hdtog '+st;
+  b.innerHTML=dIcon(st);
+  const nameEl=document.getElementById('hname_'+i);
+  if(nameEl) nameEl.style.textDecoration=st==='skipped'?'line-through':'none';
+  const salEl=document.getElementById('hsal_'+i);
+  if(salEl) salEl.textContent=st==='skipped'?' (saltato)':'';
+}
 function saveEditH(){
   const h=ls(HK);const s=h[_eHIdx];
   s.nomeScheda=document.getElementById('eHNome').value.trim()||s.nomeScheda;
@@ -1613,7 +1640,11 @@ function saveEditH(){
       s.endTime=newEndDate.toISOString();
     }
   }
-  s.esercizi.forEach((e,i)=>{e.done=_eHDone[i];});
+  s.esercizi.forEach((e,i)=>{
+    const st=_eHState[i];
+    e.skipped=(st==='skipped');
+    e.done=(st==='done');
+  });
   ss(HK,h);closeM('mEditH');renderStorico();
   updateSessionInDB(s);
 }
@@ -1634,8 +1665,6 @@ function renderStats(){
   const sw=new Date(now);sw.setDate(now.getDate()-((now.getDay()+6)%7));sw.setHours(0,0,0,0);
   const wk=h.filter(s=>new Date(s.data)>=sw).length;
   const mo=h.filter(s=>{const d=new Date(s.data);return d.getMonth()===m&&d.getFullYear()===y;}).length;
-  const lmd=new Date(y,m-1,1);
-  const lm=h.filter(s=>{const d=new Date(s.data);return d.getMonth()===lmd.getMonth()&&d.getFullYear()===lmd.getFullYear();}).length;
   const MN=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
   const MNF=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   const bars=[];
@@ -1645,13 +1674,11 @@ function renderStats(){
   const tr=new Set(h.filter(s=>{const d=new Date(s.data);return d.getMonth()===m&&d.getFullYear()===y;}).map(s=>new Date(s.data).getDate()));
   let cal='<div class="clbls">'+['Lu','Ma','Me','Gi','Ve','Sa','Do'].map(d=>`<div class="clbl">${d}</div>`).join('')+'</div><div class="cgrid">';
   for(let i=0;i<fd;i++)cal+='<div class="cday"></div>';
-  for(let d=1;d<=dim;d++)cal+=`<div class="cday${tr.has(d)?' tr':''}${d===now.getDate()?' td':''}">${d}</div>`;
+  for(let d=1;d<=dim;d++)cal+=`<div class="cday${tr.has(d)?' tr':''}${d===now.getDate()?' td':''}" onclick="showDayHistory(${y},${m},${d},this)">${d}</div>`;
   cal+='</div>';
   el.innerHTML=`<div class="sgrid">
     <div class="sc"><div class="sv">${wk}</div><div class="sl">Questa settimana</div></div>
     <div class="sc"><div class="sv">${mo}</div><div class="sl">Questo mese</div></div>
-    <div class="sc"><div class="sv">${lm}</div><div class="sl">Mese scorso</div></div>
-    <div class="sc"><div class="sv">${h.length}</div><div class="sl">Totale sessioni</div></div>
   </div>
   <div class="stitle">Frequenza mensile</div>
   <div class="card" style="margin-bottom:16px"><div style="display:flex;align-items:flex-end;gap:4px;height:90px">
@@ -1661,7 +1688,36 @@ function renderStats(){
     </div>`).join('')}
   </div></div>
   <div class="stitle">${MNF[m]} ${y}</div>
-  <div class="card">${cal}</div>`;
+  <div class="card">${cal}</div>
+  <div id="dayDetailBox"></div>`;
+}
+
+function showDayHistory(y,m,d,el){
+  document.querySelectorAll('.cday').forEach(c=>c.classList.remove('sel'));
+  if(el) el.classList.add('sel');
+  const h=ls(HK);
+  const sessions=h.filter(s=>{const sd=new Date(s.data);return sd.getFullYear()===y&&sd.getMonth()===m&&sd.getDate()===d;});
+  const box=document.getElementById('dayDetailBox');
+  if(!box) return;
+  const ds=new Date(y,m,d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(!sessions.length){
+    box.innerHTML=`<div class="stitle">${ds}</div><div class="card" style="color:var(--text3);font-size:13px">Nessun allenamento in questo giorno.</div>`;
+    return;
+  }
+  box.innerHTML=`<div class="stitle">${ds}</div>`+sessions.map(s=>{
+    const ts=new Date(s.data).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="card">
+      <div class="hname" style="margin-bottom:8px">${esc(s.nomeScheda)} <span style="font-size:12px;color:var(--text3);font-weight:600">— ${ts}</span></div>
+      ${s.esercizi.map(e=>`
+        <div class="hex${e.skipped?' skipped':''}">
+          <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
+          <span style="display:flex;align-items:center;gap:7px">
+            <span style="font-family:'DM Mono',monospace;font-size:12px">${e.skipped?'—':exTarget(e)}</span>
+            ${e.skipped?'<i class="ti ti-minus" style="color:var(--red);font-size:16px"></i>':e.done===true?'<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>':e.done===false?'<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>':''}
+          </span>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
 }
 
 // ─── SETTINGS ────────────────────────────────────────
