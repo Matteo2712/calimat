@@ -113,9 +113,8 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .pf{height:100%;background:var(--accent);transition:width .4s}
 .sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 22px;overflow-y:auto;text-align:center}
 .sphase{font-size:12px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
-.sexname{font-size:22px;font-weight:800;line-height:1.2;margin-bottom:6px;max-width:320px;color:var(--text)}
+.sexname{font-size:28px;font-weight:800;line-height:1.18;margin-bottom:8px;max-width:340px;color:var(--text)}
 .snote{font-size:14px;color:var(--text);margin-bottom:8px;max-width:300px;font-weight:600;line-height:1.4;padding:8px 12px;background:rgba(255,170,0,.1);border-radius:8px;border:1px solid rgba(255,170,0,.25)}
-.skginfo{font-size:14px;color:var(--text2);margin-bottom:8px;font-weight:600}
 .scnt{font-family:'DM Mono',monospace;font-size:42px;font-weight:500;color:var(--accent);margin-bottom:24px;letter-spacing:-1px}
 .twrap{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
 .twrap svg{transform:rotate(-90deg)}
@@ -140,7 +139,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .quick-edit-box.collapsed .quick-edit-title::after{transform:rotate(-90deg)}
 .quick-edit-box.collapsed .quick-edit-body{display:none}
 .quick-edit-body{margin-top:10px}
-.qe-current-settings{font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+.qe-current-settings{font-size:19px;font-weight:700;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px;margin-bottom:8px}
 .quick-edit-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px}
 .qei{display:flex;flex-direction:column;gap:4px;min-width:0}
 .qei label{font-size:11px;color:var(--text3);font-weight:600}
@@ -154,8 +153,8 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 /* NEXT EX PREVIEW in chron */
 .next-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;text-align:left;width:100%}
 .next-preview-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
-.next-preview-name{font-size:21px;font-weight:800;color:var(--text);margin-bottom:5px}
-.next-preview-info{font-size:16px;color:var(--text2);font-weight:600;margin-bottom:4px}
+.next-preview-name{font-size:28px;font-weight:800;color:var(--text);margin-bottom:7px;line-height:1.18}
+.next-preview-info{font-size:19px;color:var(--text2);font-weight:700;margin-bottom:4px;font-family:'DM Mono',monospace}
 .next-preview-note{font-size:13px;color:var(--orange);font-weight:600;margin-top:4px}
 /* NOTE UPDATE */
 .note-update-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;width:100%}
@@ -171,6 +170,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .hex-toggle-title{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none;padding-top:8px;border-top:1px solid var(--border)}
 .hex-toggle-title::after{content:'▾';font-size:10px;transition:transform .15s}
 .hex-toggle-box.collapsed .hex-toggle-title::after{transform:rotate(-90deg)}
+.hex-toggle-box.collapsed .schedaChev{transform:rotate(-90deg)}
 .hex-toggle-box.collapsed .hex-list{display:none}
 .hex-list{margin-top:8px}
 .div{border:none;border-top:1px solid var(--border);margin:10px 0}
@@ -257,7 +257,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.3</span></div>
+  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.4</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openM('mSettings')">
       <div class="sync-dot" id="syncDot"></div>
@@ -796,17 +796,31 @@ function renderSchede(){
   if(!schede.length){el.innerHTML='<div class="empty"><i class="ti ti-clipboard"></i><p>Nessuna scheda.<br>Crea la tua prima!</p></div>';return;}
   el.innerHTML=schede.map(s=>`
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div><div style="font-size:16px;font-weight:800;color:var(--text)">${esc(s.nome)}</div>
-          <div style="font-size:13px;color:var(--text3);margin-top:2px">${s.esercizi.length} esercizi</div></div>
-        <div style="display:flex;gap:6px">
-          <button class="bi" title="Duplica" onclick="dupeScheda('${s.id}')"><i class="ti ti-copy"></i></button>
-          <button class="bi" onclick="openEditScheda('${s.id}')"><i class="ti ti-edit"></i></button>
-          <button class="bi" style="color:var(--red);border-color:rgba(255,68,68,.3)" onclick="askDelScheda('${s.id}')"><i class="ti ti-trash"></i></button>
+      <div class="hex-toggle-box collapsed" id="schedaBox_${s.id}" style="margin-top:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="cursor:pointer;flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px" onclick="toggleQuickEdit('schedaBox_${s.id}')">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:var(--text)">${esc(s.nome)}</div>
+              <div style="font-size:13px;color:var(--text3);margin-top:2px">${s.esercizi.length} esercizi</div>
+            </div>
+            <i class="ti ti-chevron-down schedaChev" style="font-size:14px;color:var(--text3);transition:transform .15s;flex-shrink:0"></i>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="bi" title="Duplica" onclick="dupeScheda('${s.id}')"><i class="ti ti-copy"></i></button>
+            <button class="bi" onclick="openEditScheda('${s.id}')"><i class="ti ti-edit"></i></button>
+            <button class="bi" style="color:var(--red);border-color:rgba(255,68,68,.3)" onclick="askDelScheda('${s.id}')"><i class="ti ti-trash"></i></button>
+          </div>
         </div>
-      </div>
-      <div style="margin-top:11px;display:flex;flex-wrap:wrap;gap:6px">
-        ${s.esercizi.map(e=>`<span class="badge ${e.tipo==='statico'?'ac':e.tipo==='emom'?'ae':''}">${esc(e.nome)}</span>`).join('')}
+        <div class="hex-list">
+          ${s.esercizi.map(e=>`
+            <div class="hee">
+              <div class="heen">
+                <span>${esc(e.nome)}</span><br>
+                <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text2)">${esc(exInfoLine(e))}</span>
+                ${e.nota?`<div style="font-size:12px;color:var(--orange);margin-top:3px">${esc(e.nota)}</div>`:''}
+              </div>
+            </div>`).join('')}
+        </div>
       </div>
     </div>`).join('');
 }
@@ -1162,8 +1176,8 @@ function setPhase(ph){
   const exHead=`
     ${phLbl?`<div class="sphase">${phLbl}</div>`:''}
     <div class="sexname">${esc(ex.nome)}</div>
-    ${ex.nota?`<div class="snote">${esc(ex.nota)}</div>`:''}
-    ${ex.kg?`<div class="skginfo">${ex.kg} kg</div>`:''}`;
+    <div class="qe-current-settings">${esc(exInfoLine(ex))}</div>
+    ${ex.nota?`<div class="snote">${esc(ex.nota)}</div>`:''}`;
   const skipExBtn=`<button class="acbtn abskipex" onclick="skipExercise()"><i class="ti ti-player-skip-forward"></i> Skip esercizio</button>`;
 
   // next-ex preview block (used in READY, COUNTDOWN, CHRON)
