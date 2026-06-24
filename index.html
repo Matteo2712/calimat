@@ -829,7 +829,7 @@ function renderSchede(){
                 <span>${esc(e.nome)}</span>
                 <span style="font-family:'DM Mono',monospace;font-size:12px">${exTargetScheda(e)}</span>
               </div>
-              ${e.nota?`<div style="font-size:13px;color:var(--text2);margin-top:3px;font-weight:500">"${esc(e.nota)}"</div>`:''}
+              ${e.nota?`<div style="font-size:13px;color:#dedede;margin-top:3px;font-weight:500">${esc(e.nota)}</div>`:''}
             </div>`).join('')}
         </div>
       </div>
@@ -1179,7 +1179,7 @@ function exTargetScheda(e){
 }
 
 function exInfoLine(ex){
-  // Format: 5x10 22kg - 90s  OR  5x30s - 60s  OR  EMOM 5x55s
+  // Format: 5x10 22kg 90s  OR  5x30s 60s  OR  EMOM 5x55s
   if(ex.tipo==='emom'){
     let main='EMOM '+ex.serie+'x'+ex.reps+'s';
     if(ex.kg) main+=' '+ex.kg+'kg';
@@ -1188,7 +1188,7 @@ function exInfoLine(ex){
   const repsPart=ex.tipo==='statico'?ex.reps+'s':ex.reps;
   let main=ex.serie+'x'+repsPart;
   if(ex.kg) main+=' '+ex.kg+'kg';
-  return main+' - '+ex.pausa+'s';
+  return main+' '+ex.pausa+'s';
 }
 
 function setPhase(ph){
@@ -1295,7 +1295,7 @@ function setPhase(ph){
     sb.innerHTML=`
       <div class="sexname">${esc(ex.nome)}</div>
       <div class="qe-current-settings">${esc(exInfoLine(ex))}</div>
-      <div style="margin:14px 0 10px;width:100%;text-align:left;align-self:flex-start">
+      <div style="margin:14px 0 10px;text-align:center">
         <div style="font-size:24px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px">esercizio completato</div>
       </div>
       <div class="note-update-box">
