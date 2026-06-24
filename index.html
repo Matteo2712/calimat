@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0a0a0a">
 <link rel="manifest" href="/manifest.json">
 <title>CaliMat</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -107,11 +107,11 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .exlist-close{cursor:pointer;color:var(--text3);font-size:18px;padding:2px 6px}
 .exlist-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:8px;color:#fff;font-size:14px;font-weight:500}
 .exlist-item.current{background:rgba(255,170,0,.15);color:var(--orange);font-weight:500}
-.exlist-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);min-width:20px}
+.exlist-num{font-family:'Lucida Console',monospace;font-size:12px;color:var(--text3);min-width:20px}
 .exlist-item.current .exlist-num{color:var(--orange)}
 .exlist-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .exlist-right{margin-left:auto;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.exlist-comp{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);font-weight:500}
+.exlist-comp{font-family:'Lucida Console',monospace;font-size:12px;color:var(--text3);font-weight:500}
 .exlist-item.current .exlist-comp{color:var(--orange)}
 .exlist-status{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.3px;color:var(--text3)}
 .exlist-status.st-ok{color:var(--green)}
@@ -123,14 +123,14 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .sphase{font-size:12px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;width:100%;text-align:left;align-self:flex-start}
 .sexname{font-size:28px;font-weight:700;line-height:1.18;margin-bottom:8px;color:var(--text);width:100%;text-align:left;align-self:flex-start;box-sizing:border-box}
 .snote{font-size:14px;color:var(--text);margin-bottom:8px;font-weight:600;line-height:1.4;padding:8px 12px;background:rgba(255,170,0,.1);border-radius:8px;border:1px solid rgba(255,170,0,.25);width:100%;text-align:left;align-self:flex-start;box-sizing:border-box}
-.scnt{font-family:'DM Mono',monospace;font-size:42px;font-weight:500;color:var(--accent);margin-bottom:24px;letter-spacing:-1px}
+.scnt{font-family:'Lucida Console',monospace;font-size:42px;font-weight:500;color:var(--accent);margin-bottom:24px;letter-spacing:-1px}
 .twrap{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
 .twrap svg{transform:rotate(-90deg)}
 .tcenter{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center}
-.tnum{font-family:'DM Mono',monospace;font-size:56px;font-weight:500;line-height:1;color:var(--text)}
+.tnum{font-family:'Lucida Console',monospace;font-size:56px;font-weight:500;line-height:1;color:var(--text)}
 .tsub{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:3px}
 .rdis{display:flex;flex-direction:column;align-items:center;justify-content:center;width:168px;height:168px;border-radius:50%;border:8px solid var(--bg3);margin-bottom:24px}
-.rnum{font-family:'DM Mono',monospace;font-size:64px;font-weight:500;color:var(--green);line-height:1}
+.rnum{font-family:'Lucida Console',monospace;font-size:64px;font-weight:500;color:var(--green);line-height:1}
 .rlbl{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:4px}
 .acbtn{width:100%;padding:18px;border-radius:var(--radius);font-size:18px;font-weight:800;cursor:pointer;border:none;transition:all .12s;margin-bottom:10px;letter-spacing:.3px}
 .acbtn:active{transform:scale(.98)}
@@ -147,22 +147,22 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .quick-edit-box.collapsed .quick-edit-title::after{transform:rotate(-90deg)}
 .quick-edit-box.collapsed .quick-edit-body{display:none}
 .quick-edit-body{margin-top:10px}
-.qe-current-settings{font-size:19px;font-weight:500;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px;margin-bottom:8px;width:100%;text-align:left;align-self:flex-start}
+.qe-current-settings{font-size:19px;font-weight:500;color:var(--text2);font-family:'Lucida Console',monospace;margin-top:2px;margin-bottom:8px;width:100%;text-align:left;align-self:flex-start}
 .quick-edit-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px}
 .qei{display:flex;flex-direction:column;gap:4px;min-width:0}
 .qei label{font-size:11px;color:var(--text3);font-weight:600}
-.qei input{width:100%;padding:9px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:15px;font-family:'DM Mono',monospace;text-align:center}
+.qei input{width:100%;padding:9px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:15px;font-family:'Lucida Console',monospace;text-align:center}
 .cdbx p{font-size:15px;color:var(--text2);text-align:center;margin-bottom:14px}
 .cdbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cdyes{background:rgba(68,255,136,.15);color:var(--green);border:1px solid rgba(68,255,136,.35);border-radius:var(--radius);padding:17px;font-size:17px;font-weight:800;cursor:pointer}
 .cdno{background:rgba(255,68,68,.12);color:var(--red);border:1px solid rgba(255,68,68,.25);border-radius:var(--radius);padding:17px;font-size:17px;font-weight:800;cursor:pointer}
-.chron-time{font-family:'DM Mono',monospace;font-size:72px;font-weight:500;color:var(--text);line-height:1;margin-bottom:14px}
+.chron-time{font-family:'Lucida Console',monospace;font-size:72px;font-weight:500;color:var(--text);line-height:1;margin-bottom:14px}
 .chron-label{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:6px;margin-bottom:8px}
 /* NEXT EX PREVIEW in chron */
 .next-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;text-align:left;width:100%}
 .next-preview-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
 .next-preview-name{font-size:28px;font-weight:600;color:var(--text);margin-bottom:7px;line-height:1.18}
-.next-preview-info{font-size:19px;color:var(--text2);font-weight:500;margin-bottom:4px;font-family:'DM Mono',monospace}
+.next-preview-info{font-size:19px;color:var(--text2);font-weight:500;margin-bottom:4px;font-family:'Lucida Console',monospace}
 .next-preview-note{font-size:13px;color:var(--orange);font-weight:600;margin-top:4px}
 /* NOTE UPDATE */
 .note-update-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;width:100%}
@@ -186,7 +186,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .hee:last-child{border-bottom:none}
 .heen{flex:1;font-size:14px;font-weight:600;color:var(--text)}
 .heen span{font-size:12px;color:var(--text3);font-weight:500}
-.hei{width:46px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 7px;color:var(--text);font-size:14px;text-align:center;font-family:'DM Mono',monospace}
+.hei{width:46px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 7px;color:var(--text);font-size:14px;text-align:center;font-family:'Lucida Console',monospace}
 .hei:focus{border-color:var(--accent)}
 .hdtog{width:34px;height:34px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
 .hdtog.done{background:rgba(68,255,136,.15);border-color:rgba(68,255,136,.35)}
@@ -195,10 +195,10 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 /* STATS */
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
-.sv{font-size:30px;font-weight:800;color:var(--accent);font-family:'DM Mono',monospace}
+.sv{font-size:30px;font-weight:800;color:var(--accent);font-family:'Lucida Console',monospace}
 .sl{font-size:12px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-top:4px}
 .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cday{aspect-ratio:1;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);cursor:pointer}
+.cday{aspect-ratio:1;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Lucida Console',monospace;color:var(--text3);cursor:pointer}
 .cday:empty{cursor:default}
 .cday.sel{box-shadow:0 0 0 2px var(--accent) inset}
 .cday.tr{background:rgba(200,241,53,.22);color:var(--accent);font-weight:700}
@@ -827,7 +827,7 @@ function renderSchede(){
             <div style="padding:9px 0;${ei<s.esercizi.length-1?'border-bottom:1px solid var(--border)':''}">
               <div class="hex">
                 <span>${esc(e.nome)}</span>
-                <span style="font-family:'DM Mono',monospace;font-size:12px">${exTargetScheda(e)}</span>
+                <span style="font-family:'Lucida Console',monospace;font-size:12px">${exTargetScheda(e)}</span>
               </div>
               ${e.nota?`<div style="font-size:13px;color:#aaa;margin-top:3px;font-weight:500">${esc(e.nota)}</div>`:''}
             </div>`).join('')}
@@ -890,19 +890,19 @@ function buildExCard(e,i){
     <div class="ir4" style="margin-bottom:10px">
       <div><div class="il">Serie</div>
         <input class="inf" type="number" min="1" placeholder="3" value="${e.serie||''}"
-          style="padding:9px 7px;font-family:'DM Mono',monospace;font-size:14px"
+          style="padding:9px 7px;font-family:'Lucida Console',monospace;font-size:14px"
           oninput="_exTemp[${i}].serie=+this.value||0"></div>
       <div><div class="il">${isE?'Sec':isS?'Sec':'Reps'}</div>
         <input class="inf" type="number" min="1" placeholder="${isE?'55':isS?'30':'10'}" value="${e.reps||''}"
-          style="padding:9px 7px;font-family:'DM Mono',monospace;font-size:14px"
+          style="padding:9px 7px;font-family:'Lucida Console',monospace;font-size:14px"
           oninput="_exTemp[${i}].reps=+this.value||0"></div>
       <div><div class="il">Kg</div>
         <input class="inf" type="number" min="0" step="0.5" placeholder="—" value="${e.kg!=null?e.kg:''}"
-          style="padding:9px 7px;font-family:'DM Mono',monospace;font-size:14px"
+          style="padding:9px 7px;font-family:'Lucida Console',monospace;font-size:14px"
           oninput="_exTemp[${i}].kg=this.value===''?null:+this.value"></div>
       <div style="${isE?'opacity:.35':''}"><div class="il">Pausa</div>
         <input class="inf" type="number" min="0" placeholder="${isE?'—':'60'}" value="${isE?'':(e.pausa||'')}" ${isE?'disabled':''}
-          style="padding:9px 7px;font-family:'DM Mono',monospace;font-size:14px"
+          style="padding:9px 7px;font-family:'Lucida Console',monospace;font-size:14px"
           oninput="_exTemp[${i}].pausa=+this.value||0"></div>
     </div>
     <div><div class="il">Nota</div>
@@ -1296,7 +1296,7 @@ function setPhase(ph){
       <div class="sexname">${esc(ex.nome)}</div>
       <div class="qe-current-settings">${esc(exInfoLine(ex))}</div>
       <div style="margin:14px 0 10px;text-align:center">
-        <div style="font-size:24px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px">esercizio completato</div>
+        <div style="font-size:24px;font-weight:700;color:var(--green);font-family:'Lucida Console',monospace;text-transform:uppercase;letter-spacing:.5px">esercizio completato</div>
       </div>
       <div class="note-update-box">
         <div class="note-update-label">Aggiorna nota esercizio</div>
@@ -1609,7 +1609,7 @@ function renderStorico(){
           <div class="hex${e.skipped?' skipped':''}">
             <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
             <span style="display:flex;align-items:center;gap:7px">
-              <span style="font-family:'DM Mono',monospace;font-size:12px">${e.skipped?'—':exTarget(e)}</span>
+              <span style="font-family:'Lucida Console',monospace;font-size:12px">${e.skipped?'—':exTarget(e)}</span>
               ${e.skipped?'<i class="ti ti-minus" style="color:var(--red);font-size:16px"></i>':e.done===true?'<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>':e.done===false?'<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>':''}
             </span>
           </div>`).join('')}</div>
@@ -1640,7 +1640,7 @@ function openEditH(idx){
         <span id="hname_${i}" style="${e.skipped?'text-decoration:line-through':''}">${esc(e.nome)}</span><span id="hsal_${i}" style="color:var(--red)">${e.skipped?' (saltato)':''}</span><br>
         <span>${e.tipo==='emom'?'EMOM '+e.reps_target+'s/ciclo':e.tipo==='statico'?e.reps_target+'s':e.reps_target+' reps'}${e.kg?' — '+e.kg+'kg':''}${e.tipo!=='emom'?' — pausa '+e.pausa+'s':''}</span>
       </div>
-      <span style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace">${e.serie_fatte}/${e.serie_target}</span>
+      <span style="font-size:13px;color:var(--text3);font-family:'Lucida Console',monospace">${e.serie_fatte}/${e.serie_target}</span>
       <button class="hdtog ${_eHState[i]}" id="htog_${i}" onclick="cycleHState(${i})">${dIcon(_eHState[i])}</button>
     </div>`).join('');
   openM('mEditH');
@@ -1748,7 +1748,7 @@ function showDayHistory(y,m,d,el){
         <div class="hex${e.skipped?' skipped':''}">
           <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
           <span style="display:flex;align-items:center;gap:7px">
-            <span style="font-family:'DM Mono',monospace;font-size:12px">${e.skipped?'—':exTarget(e)}</span>
+            <span style="font-family:'Lucida Console',monospace;font-size:12px">${e.skipped?'—':exTarget(e)}</span>
             ${e.skipped?'<i class="ti ti-minus" style="color:var(--red);font-size:16px"></i>':e.done===true?'<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>':e.done===false?'<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>':''}
           </span>
         </div>`).join('')}
