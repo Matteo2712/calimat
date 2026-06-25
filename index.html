@@ -818,7 +818,8 @@ function renderSchede(){
             </div>
           </div>
         </div>
-        <div class="hex-list">
+        <div class="hex-list" style="margin-left:10px">
+          <div style="font-size:12px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">${s.esercizi.length} esercizi</div>
           ${s.esercizi.map((e,ei)=>`
             <div style="padding:9px 0;${ei<s.esercizi.length-1?'border-bottom:1px solid var(--border)':''}">
               <div class="hex">
