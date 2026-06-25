@@ -59,6 +59,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .bg{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}.bg:active{background:var(--bg4)}
 .bd{background:rgba(255,68,68,.15);color:var(--red);border:1px solid rgba(255,68,68,.35)}
 .bi{width:40px;height:40px;border-radius:var(--radius-sm);background:var(--bg3);border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;cursor:pointer}
+.bi-sm{width:30px;height:30px;font-size:15px}
 .opt-menu-wrap{position:relative;flex-shrink:0}
 .opt-menu{position:absolute;top:calc(100% + 4px);right:0;background:var(--bg2);border:1px solid var(--border);border-radius:10px;min-width:152px;z-index:60;display:none;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.45)}
 .opt-menu.show{display:block}
@@ -178,7 +179,6 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .hex-toggle-title{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text3);text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none;padding-top:8px;border-top:1px solid var(--border)}
 .hex-toggle-title::after{content:'▾';font-size:10px;transition:transform .15s}
 .hex-toggle-box.collapsed .hex-toggle-title::after{transform:rotate(-90deg)}
-.hex-toggle-box.collapsed .schedaChev{transform:rotate(-90deg)}
 .hex-toggle-box.collapsed .hex-list{display:none}
 .hex-list{margin-top:8px}
 .div{border:none;border-top:1px solid var(--border);margin:10px 0}
@@ -802,19 +802,15 @@ let _eid=null,_exTemp=[];
 function renderSchede(){
   const el=document.getElementById('schedeList');const schede=ls(SK);
   if(!schede.length){el.innerHTML='<div class="empty"><i class="ti ti-clipboard"></i><p>Nessuna scheda.<br>Crea la tua prima!</p></div>';return;}
-  el.innerHTML=schede.map(s=>`
-    <div class="card">
+  el.innerHTML=schede.map((s,si)=>`
+    <div style="padding:14px 0;${si<schede.length-1?'border-bottom:1px solid var(--border)':''}">
       <div class="hex-toggle-box collapsed" id="schedaBox_${s.id}" style="margin-top:0">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <div style="cursor:pointer;flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px" onclick="toggleQuickEdit('schedaBox_${s.id}')">
-            <div>
-              <div style="font-size:16px;font-weight:800;color:var(--text)">${esc(s.nome)}</div>
-              <div style="font-size:13px;color:var(--text3);margin-top:2px">${s.esercizi.length} esercizi</div>
-            </div>
-            <i class="ti ti-chevron-down schedaChev" style="font-size:14px;color:var(--text3);transition:transform .15s;flex-shrink:0"></i>
+          <div style="cursor:pointer;flex:1" onclick="toggleQuickEdit('schedaBox_${s.id}')">
+            <div style="font-size:16px;font-weight:800;color:var(--text)">${esc(s.nome)}</div>
           </div>
           <div class="opt-menu-wrap">
-            <button class="bi" onclick="toggleOptMenu('optS_${s.id}',event)"><i class="ti ti-dots-vertical"></i></button>
+            <button class="bi bi-sm" onclick="toggleOptMenu('optS_${s.id}',event)"><i class="ti ti-dots-vertical"></i></button>
             <div class="opt-menu" id="optS_${s.id}">
               <button onclick="closeOptMenus();openEditScheda('${s.id}')"><i class="ti ti-edit"></i> Modifica</button>
               <button onclick="closeOptMenus();dupeScheda('${s.id}')"><i class="ti ti-copy"></i> Duplica</button>
@@ -829,7 +825,7 @@ function renderSchede(){
                 <span>${esc(e.nome)}</span>
                 <span style="font-family:'Lucida Console',monospace;font-size:12px">${exTargetScheda(e)}</span>
               </div>
-              ${e.nota?`<div style="font-size:13px;color:#aaa;margin-top:3px;font-weight:500">${esc(e.nota)}</div>`:''}
+              ${e.nota?`<div style="font-size:13px;color:#888;margin-top:3px;margin-left:10px;font-weight:500">${esc(e.nota)}</div>`:''}
             </div>`).join('')}
         </div>
       </div>
