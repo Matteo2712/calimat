@@ -78,11 +78,14 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .tgb{flex:1;padding:10px 4px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .12s}
 .tgb.on{border-color:var(--accent);background:rgba(200,241,53,.12);color:var(--accent)}
 /* GRUPPI */
-.grp-bar{display:flex;gap:7px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
-.grp-bar::-webkit-scrollbar{display:none}
-.grp-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:700;border:1px solid var(--border);background:var(--bg3);color:var(--text3);white-space:nowrap;transition:all .12s}
+.grp-wrap{display:flex;flex-wrap:wrap;gap:8px;max-height:48vh;overflow-y:auto;padding:2px}
+.grp-chip{flex-shrink:0;padding:9px 15px;border-radius:20px;font-size:13px;font-weight:700;border:1px solid var(--border);background:var(--bg3);color:var(--text3);white-space:nowrap;transition:all .12s}
 .grp-chip.on{border-color:var(--accent);background:rgba(200,241,53,.15);color:var(--accent)}
-.grp-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.grp-filter-btn{display:flex;align-items:center;gap:7px;width:100%;padding:11px 14px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;border:1px solid var(--border);background:var(--bg3);color:var(--text2);margin-bottom:14px;cursor:pointer}
+.grp-filter-btn i{font-size:16px;color:var(--text3)}
+.grp-filter-btn.active{border-color:var(--accent);background:rgba(200,241,53,.1);color:var(--accent)}
+.grp-filter-btn.active i{color:var(--accent)}
+.grp-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);gap:8px}
 .grp-row:last-child{border-bottom:none}
 .ta{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-size:14px;width:100%;min-height:56px;resize:none}
 .ta:focus{border-color:var(--accent)}
@@ -272,7 +275,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.6</span></div>
+  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.7</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openSettings()">
       <div class="sync-dot" id="syncDot"></div>
@@ -282,9 +285,9 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
   </div>
 </div>
 
-<div id="pgSchede" class="page active"><div class="stitle">Le tue schede</div><div id="grpBarSchede"></div><div id="schedeList"></div></div>
-<div id="pgStorico" class="page"><div class="stitle">Storico allenamenti</div><div id="grpBarStorico"></div><div id="storicoList"></div></div>
-<div id="pgStats" class="page"><div class="stitle">Statistiche</div><div id="grpBarStats"></div><div id="statsEl"></div></div>
+<div id="pgSchede" class="page active"><div class="stitle">Le tue schede</div><button class="grp-filter-btn" id="grpBtnSchede" type="button" style="display:none" onclick="openGrpPickerFilter()"><i class="ti ti-filter"></i><span>Tutti i gruppi</span></button><div id="schedeList"></div></div>
+<div id="pgStorico" class="page"><div class="stitle">Storico allenamenti</div><button class="grp-filter-btn" id="grpBtnStorico" type="button" style="display:none" onclick="openGrpPickerFilter()"><i class="ti ti-filter"></i><span>Tutti i gruppi</span></button><div id="storicoList"></div></div>
+<div id="pgStats" class="page"><div class="stitle">Statistiche</div><button class="grp-filter-btn" id="grpBtnStats" type="button" style="display:none" onclick="openGrpPickerFilter()"><i class="ti ti-filter"></i><span>Tutti i gruppi</span></button><div id="statsEl"></div></div>
 
 <nav class="bnav">
   <button class="bni on" data-pg="pgSchede" onclick="navTo(this)"><i class="ti ti-clipboard-list"></i>Schede</button>
@@ -300,9 +303,9 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="mh"></div>
     <div class="mt" id="mSchedaTit">Nuova scheda</div>
     <div class="ig"><label class="il">Nome scheda</label><input class="inf" id="schedaNome" placeholder="es. Push parchetto"></div>
-    <div class="ig">
+    <div class="ig" id="schedaGrpWrap" style="display:none">
       <label class="il">Gruppo</label>
-      <div class="grp-bar" id="schedaGrpPicker" style="margin-bottom:0"></div>
+      <button class="grp-filter-btn" id="schedaGrpBtn" type="button" style="margin-bottom:0" onclick="openGrpPickerAssign()"><i class="ti ti-tag"></i><span>Nessun gruppo</span></button>
     </div>
     <div class="stitle" style="margin-top:0">Esercizi — grip per riordinare</div>
     <div id="exList"></div>
@@ -321,6 +324,19 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="mt">Scegli scheda</div>
     <div id="pickList"></div>
     <button class="btn bg bw" style="margin-top:8px" onclick="closeM('mPick')">Annulla</button>
+  </div>
+</div>
+
+<!-- MODAL SCELTA GRUPPI (filtro e assegnazione) -->
+<div class="mo" id="mGrpPicker">
+  <div class="mbox">
+    <div class="mh"></div>
+    <div class="mt" id="grpPickerTitle">Filtra per gruppo</div>
+    <div id="grpPickerList"></div>
+    <div class="mac">
+      <button class="btn bg" style="flex:1" onclick="clearGrpPicker()">Deseleziona tutti</button>
+      <button class="btn ba" style="flex:1" onclick="closeGrpPicker()">Fatto</button>
+    </div>
   </div>
 </div>
 
@@ -379,10 +395,11 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <button class="btn bg bw" style="margin-top:12px" onclick="testBeep()"><i class="ti ti-bell"></i> Prova beep</button>
     <div class="stitle">Gruppi</div>
     <div id="gruppiMgmtList" style="margin-bottom:10px"></div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
       <input class="inf" id="newGruppoNome" placeholder="Nome gruppo (es. Forza)" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addGruppo();}">
       <button class="bi" onclick="addGruppo()"><i class="ti ti-plus"></i></button>
     </div>
+    <button class="btn bg bw" style="margin-bottom:16px" onclick="backfillStoricoGruppi()"><i class="ti ti-refresh"></i> Applica gruppi allo storico esistente</button>
     <div class="stitle">Backup dati</div>
     <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px">
       <button class="btn bg bw" onclick="exportData()"><i class="ti ti-download"></i> Esporta tutto (JSON)</button>
@@ -513,7 +530,7 @@ async function loadFromDB(){
     const gRes = await DB.from('gruppi').select('*').order('nome',{ascending:true});
     if(!gRes.error) ss(GK, gRes.data.map(r=>({id:r.id,nome:r.nome})));
   }catch(e){console.warn('tabella gruppi non disponibile',e);}
-  renderSchede(); renderStorico(); renderStats(); renderGruppiMgmt(); renderGrpBars();
+  renderSchede(); renderStorico(); renderStats(); renderGruppiMgmt(); renderGrpFilterButtons();
 }
 
 // ─── SUPABASE: SALVA SCHEDA ────────────────────────
@@ -838,46 +855,123 @@ function undoAction(){
 
 // ─── SCHEDE ──────────────────────────────────────────
 let _eid=null,_exTemp=[],_schedaGruppiTemp=[];
-let _grpFilter=null; // null = "Tutti", altrimenti id del gruppo selezionato
+let _grpFilter=[]; // array di id gruppo selezionati; [] = "Tutti i gruppi"
 
 // ─── GRUPPI ──────────────────────────────────────────
+function sortedGruppi(){
+  return [...ls(GK)].sort((a,b)=>a.nome.localeCompare(b.nome,'it'));
+}
 function getFilteredSchede(){
   const schede=ls(SK);
-  if(_grpFilter===null) return schede;
-  return schede.filter(s=>Array.isArray(s.gruppi)&&s.gruppi.includes(_grpFilter));
+  if(!_grpFilter.length) return schede;
+  return schede.filter(s=>Array.isArray(s.gruppi)&&s.gruppi.some(id=>_grpFilter.includes(id)));
 }
 function getFilteredStorico(){
   const h=ls(HK);
-  if(_grpFilter===null) return h;
-  return h.filter(s=>Array.isArray(s.gruppi)&&s.gruppi.includes(_grpFilter));
+  if(!_grpFilter.length) return h;
+  return h.filter(s=>Array.isArray(s.gruppi)&&s.gruppi.some(id=>_grpFilter.includes(id)));
 }
-function grpBarHTML(){
-  const gruppi=ls(GK);
-  if(!gruppi.length) return '';
-  return '<div class="grp-bar">'
-    +`<button class="grp-chip${_grpFilter===null?' on':''}" onclick="setGrpFilter(null)">Tutti</button>`
-    +gruppi.map(g=>`<button class="grp-chip${_grpFilter===g.id?' on':''}" onclick="setGrpFilter('${g.id}')">${esc(g.nome)}</button>`).join('')
-    +'</div>';
+function grpFilterLabel(arr){
+  if(!arr.length) return 'Tutti i gruppi';
+  if(arr.length===1){
+    const g=ls(GK).find(x=>x.id===arr[0]);
+    return g?g.nome:'Tutti i gruppi';
+  }
+  return arr.length+' gruppi selezionati';
 }
-function renderGrpBars(){
-  ['grpBarSchede','grpBarStorico','grpBarStats'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.innerHTML=grpBarHTML();
+function renderGrpFilterButtons(){
+  const show=ls(GK).length>0;
+  ['grpBtnSchede','grpBtnStorico','grpBtnStats'].forEach(id=>{
+    const btn=document.getElementById(id);if(!btn)return;
+    btn.style.display=show?'flex':'none';
+    btn.classList.toggle('active',_grpFilter.length>0);
+    const lbl=btn.querySelector('span');if(lbl)lbl.textContent=grpFilterLabel(_grpFilter);
   });
 }
-function setGrpFilter(id){
-  _grpFilter=id;
-  renderGrpBars();renderSchede();renderStorico();renderStats();
+function renderSchedaGrpButton(){
+  const wrap=document.getElementById('schedaGrpWrap');if(!wrap)return;
+  const show=ls(GK).length>0;
+  wrap.style.display=show?'block':'none';
+  if(!show)return;
+  const btn=document.getElementById('schedaGrpBtn');
+  btn.classList.toggle('active',_schedaGruppiTemp.length>0);
+  const lbl=btn.querySelector('span');
+  lbl.textContent=_schedaGruppiTemp.length?grpFilterLabel(_schedaGruppiTemp):'Nessun gruppo';
 }
+
+// ─── MODAL SCELTA GRUPPI (a finestra, multi-selezione) ──
+let _grpPickerMode=null; // 'filter' | 'assign'
+function grpPickerActiveArr(){ return _grpPickerMode==='filter'?_grpFilter:_schedaGruppiTemp; }
+function openGrpPickerFilter(){
+  _grpPickerMode='filter';
+  document.getElementById('grpPickerTitle').textContent='Filtra per gruppo';
+  renderGrpPickerList();openM('mGrpPicker');
+}
+function openGrpPickerAssign(){
+  _grpPickerMode='assign';
+  document.getElementById('grpPickerTitle').textContent='Assegna gruppo';
+  renderGrpPickerList();openM('mGrpPicker');
+}
+function renderGrpPickerList(){
+  const el=document.getElementById('grpPickerList');if(!el)return;
+  const gruppi=sortedGruppi();const active=grpPickerActiveArr();
+  if(!gruppi.length){el.innerHTML='<div style="font-size:14px;color:var(--text3);text-align:center;padding:24px 0">Nessun gruppo creato.<br>Puoi crearne uno dalle Impostazioni.</div>';return;}
+  el.innerHTML='<div class="grp-wrap">'+gruppi.map(g=>`<button class="grp-chip${active.includes(g.id)?' on':''}" onclick="toggleGrpPicker('${g.id}')">${esc(g.nome)}</button>`).join('')+'</div>';
+}
+function toggleGrpPicker(id){
+  const arr=grpPickerActiveArr();
+  const i=arr.indexOf(id);
+  if(i>-1)arr.splice(i,1);else arr.push(id);
+  renderGrpPickerList();
+}
+function clearGrpPicker(){
+  grpPickerActiveArr().length=0;
+  renderGrpPickerList();
+}
+function closeGrpPicker(){
+  closeM('mGrpPicker');
+  if(_grpPickerMode==='filter'){renderGrpFilterButtons();renderSchede();renderStorico();renderStats();}
+  else if(_grpPickerMode==='assign'){renderSchedaGrpButton();}
+  _grpPickerMode=null;
+}
+
 function openSettings(){renderGruppiMgmt();openM('mSettings');}
+let _editingGruppoId=null;
 function renderGruppiMgmt(){
   const el=document.getElementById('gruppiMgmtList');if(!el)return;
-  const gruppi=ls(GK);
+  const gruppi=sortedGruppi();
   if(!gruppi.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:6px 0">Nessun gruppo creato.</div>';return;}
-  el.innerHTML=gruppi.map(g=>`
-    <div class="grp-row">
+  el.innerHTML=gruppi.map(g=>{
+    if(_editingGruppoId===g.id){
+      return `<div class="grp-row">
+        <input class="inf" id="editGruppoInput_${g.id}" value="${esc(g.nome)}" style="flex:1;padding:8px 11px;font-size:14px" onkeydown="if(event.key==='Enter'){event.preventDefault();saveGruppoRename('${g.id}');}">
+        <button class="bi bi-sm" style="color:var(--accent);border-color:rgba(200,241,53,.3)" onclick="saveGruppoRename('${g.id}')"><i class="ti ti-check"></i></button>
+      </div>`;
+    }
+    return `<div class="grp-row">
       <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(g.nome)}</span>
-      <button class="bi bi-sm" style="color:var(--red);border-color:rgba(255,68,68,.3)" onclick="deleteGruppo('${g.id}')"><i class="ti ti-trash"></i></button>
-    </div>`).join('');
+      <span style="display:flex;gap:6px;flex-shrink:0">
+        <button class="bi bi-sm" onclick="startEditGruppo('${g.id}')"><i class="ti ti-pencil"></i></button>
+        <button class="bi bi-sm" style="color:var(--red);border-color:rgba(255,68,68,.3)" onclick="deleteGruppo('${g.id}')"><i class="ti ti-trash"></i></button>
+      </span>
+    </div>`;
+  }).join('');
+  if(_editingGruppoId){
+    const inp=document.getElementById('editGruppoInput_'+_editingGruppoId);
+    if(inp){inp.focus();inp.select();}
+  }
+}
+function startEditGruppo(id){_editingGruppoId=id;renderGruppiMgmt();}
+function saveGruppoRename(id){
+  const inp=document.getElementById('editGruppoInput_'+id);if(!inp)return;
+  const nome=inp.value.trim();
+  const gruppi=ls(GK);const g=gruppi.find(x=>x.id===id);if(!g)return;
+  if(!nome){_editingGruppoId=null;renderGruppiMgmt();return;}
+  if(gruppi.some(x=>x.id!==id&&x.nome.toLowerCase()===nome.toLowerCase())) return alert2('Esiste già un gruppo con questo nome');
+  g.nome=nome;ss(GK,gruppi);
+  _editingGruppoId=null;
+  renderGruppiMgmt();renderGrpFilterButtons();renderSchedaGrpButton();renderGrpPickerList();
+  saveGruppoToDB(g);
 }
 function addGruppo(){
   const inp=document.getElementById('newGruppoNome');
@@ -888,7 +982,7 @@ function addGruppo(){
   const g={id:uid(),nome};
   gruppi.push(g);ss(GK,gruppi);
   inp.value='';
-  renderGruppiMgmt();renderGrpBars();renderSchedaGrpPicker();
+  renderGruppiMgmt();renderGrpFilterButtons();renderSchedaGrpButton();renderGrpPickerList();
   saveGruppoToDB(g);
 }
 function deleteGruppo(id){
@@ -900,27 +994,34 @@ function deleteGruppo(id){
       if(Array.isArray(s.gruppi)&&s.gruppi.includes(id)){s.gruppi=s.gruppi.filter(gi=>gi!==id);toSync.push(s);}
     });
     ss(SK,schede);
-    if(_grpFilter===id)_grpFilter=null;
-    renderGruppiMgmt();renderGrpBars();renderSchedaGrpPicker();renderSchede();renderStorico();renderStats();
+    _grpFilter=_grpFilter.filter(x=>x!==id);
+    _schedaGruppiTemp=_schedaGruppiTemp.filter(x=>x!==id);
+    renderGruppiMgmt();renderGrpFilterButtons();renderSchedaGrpButton();renderGrpPickerList();renderSchede();renderStorico();renderStats();
     await deleteGruppoFromDB(id);
     for(const s of toSync) await saveSchedaToDB(s);
   });
 }
-function renderSchedaGrpPicker(){
-  const el=document.getElementById('schedaGrpPicker');if(!el)return;
-  const gruppi=ls(GK);
-  if(!gruppi.length){el.innerHTML='<div style="font-size:13px;color:var(--text3)">Crea un gruppo dalle Impostazioni per organizzare le tue schede.</div>';return;}
-  el.innerHTML=gruppi.map(g=>`<button class="grp-chip${_schedaGruppiTemp.includes(g.id)?' on':''}" onclick="toggleSchedaGruppo('${g.id}')">${esc(g.nome)}</button>`).join('');
-}
-function toggleSchedaGruppo(id){
-  const i=_schedaGruppiTemp.indexOf(id);
-  if(i>-1)_schedaGruppiTemp.splice(i,1);else _schedaGruppiTemp.push(id);
-  renderSchedaGrpPicker();
+
+// ─── BACKFILL: applica i gruppi attuali delle schede alle sessioni storiche con lo stesso nome ──
+async function backfillStoricoGruppi(){
+  const schede=ls(SK);const h=ls(HK);const changed=[];
+  h.forEach(s=>{
+    const match=schede.find(sc=>sc.nome.trim().toLowerCase()===String(s.nomeScheda||'').trim().toLowerCase());
+    if(!match) return;
+    const newG=Array.isArray(match.gruppi)?match.gruppi.slice():[];
+    const oldG=Array.isArray(s.gruppi)?s.gruppi:[];
+    const same=oldG.length===newG.length&&oldG.every(id=>newG.includes(id));
+    if(!same){s.gruppi=newG;changed.push(s);}
+  });
+  if(!changed.length) return alert2('Nessuna sessione da aggiornare: nomi non corrispondenti o già allineati.');
+  ss(HK,h);renderStorico();renderStats();
+  for(const s of changed) await updateSessionInDB(s);
+  alert2(changed.length===1?'1 sessione nello storico aggiornata.':changed.length+' sessioni nello storico aggiornate.');
 }
 
 function renderSchede(){
   const el=document.getElementById('schedeList');const schede=getFilteredSchede();
-  if(!schede.length){el.innerHTML=`<div class="empty"><i class="ti ti-clipboard"></i><p>${_grpFilter?'Nessuna scheda in questo gruppo.':'Nessuna scheda.<br>Crea la tua prima!'}</p></div>`;return;}
+  if(!schede.length){el.innerHTML=`<div class="empty"><i class="ti ti-clipboard"></i><p>${_grpFilter.length?'Nessuna scheda in questo gruppo.':'Nessuna scheda.<br>Crea la tua prima!'}</p></div>`;return;}
   el.innerHTML=schede.map((s,si)=>`
     <div style="padding:14px 0;${si<schede.length-1?'border-bottom:1px solid var(--border)':''}">
       <div class="hex-toggle-box collapsed" id="schedaBox_${s.id}" style="margin-top:0">
@@ -969,14 +1070,14 @@ function askDelScheda(id){
     deleteSchedaFromDB(id);
   });
 }
-function openNewScheda(){_eid=null;_exTemp=[];_schedaGruppiTemp=[];document.getElementById('schedaNome').value='';document.getElementById('mSchedaTit').textContent='Nuova scheda';renderExList();renderSchedaGrpPicker();openM('mScheda');}
+function openNewScheda(){_eid=null;_exTemp=[];_schedaGruppiTemp=[];document.getElementById('schedaNome').value='';document.getElementById('mSchedaTit').textContent='Nuova scheda';renderExList();renderSchedaGrpButton();openM('mScheda');}
 function openEditScheda(id){
   const s=ls(SK).find(x=>x.id===id);if(!s)return;
   _eid=id;_exTemp=JSON.parse(JSON.stringify(s.esercizi));
   _schedaGruppiTemp=Array.isArray(s.gruppi)?[...s.gruppi]:[];
   document.getElementById('schedaNome').value=s.nome;
   document.getElementById('mSchedaTit').textContent='Modifica scheda';
-  renderExList();renderSchedaGrpPicker();openM('mScheda');
+  renderExList();renderSchedaGrpButton();openM('mScheda');
 }
 
 // ─── EX LIST ─────────────────────────────────────────
@@ -1697,7 +1798,7 @@ function exTarget(e){
 
 function renderStorico(){
   const el=document.getElementById('storicoList');const h=getFilteredStorico();
-  if(!h.length){el.innerHTML=`<div class="empty"><i class="ti ti-history"></i><p>${_grpFilter?'Nessun allenamento in questo gruppo.':'Nessun allenamento ancora.'}</p></div>`;return;}
+  if(!h.length){el.innerHTML=`<div class="empty"><i class="ti ti-history"></i><p>${_grpFilter.length?'Nessun allenamento in questo gruppo.':'Nessun allenamento ancora.'}</p></div>`;return;}
   el.innerHTML=h.map((s)=>{
     const d=new Date(s.data);
     const ds=d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -1892,7 +1993,7 @@ function importData(inp){
       if(!d.schede||!d.storico)return alert2('File non valido');
       confirm2('Importa backup','Sovrascrivere i dati attuali con il backup?',async()=>{
         ss(SK,d.schede);ss(HK,d.storico);if(d.gruppi)ss(GK,d.gruppi);
-        closeM('mSettings');renderSchede();renderStorico();renderStats();renderGruppiMgmt();renderGrpBars();
+        closeM('mSettings');renderSchede();renderStorico();renderStats();renderGruppiMgmt();renderGrpFilterButtons();
         showUndo('Dati importati!','',null);
         // Sync su DB
         setSyncDot('syncing');
@@ -1914,8 +2015,8 @@ function resetAll(){
     ]);
     try{ await DB.from('gruppi').delete().eq('user_id',_currentUser.id); }catch(e){}
     localStorage.removeItem(SK);localStorage.removeItem(HK);localStorage.removeItem(GK);
-    _grpFilter=null;
-    closeM('mSettings');renderSchede();renderStorico();renderStats();renderGruppiMgmt();renderGrpBars();
+    _grpFilter=[];
+    closeM('mSettings');renderSchede();renderStorico();renderStats();renderGruppiMgmt();renderGrpFilterButtons();
     setSyncDot('ok');
   });
 }
@@ -1924,6 +2025,7 @@ function resetAll(){
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+document.getElementById('mGrpPicker').addEventListener('click',e=>{if(e.target.id==='mGrpPicker')closeGrpPicker();});
 
 // ─── 3-DOT OPTIONS MENU (schede / storico) ───────────
 function toggleOptMenu(id,ev){
