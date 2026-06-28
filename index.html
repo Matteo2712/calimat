@@ -276,7 +276,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.8</span></div>
+  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.9</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openSettings()">
       <div class="sync-dot" id="syncDot"></div>
@@ -329,7 +329,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 </div>
 
 <!-- MODAL SCELTA GRUPPI (filtro e assegnazione) -->
-<div class="mo" id="mGrpPicker">
+<div class="mo" id="mGrpPicker" style="z-index:600">
   <div class="mbox">
     <div class="mh"></div>
     <div class="mt" id="grpPickerTitle">Filtra per gruppo</div>
@@ -366,7 +366,10 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="ig"><label class="il">Nome scheda</label><input class="inf" id="eHNome"></div>
     <div class="ig" id="eHGrpWrap" style="display:none">
       <label class="il">Gruppo</label>
-      <button class="grp-filter-btn" id="eHGrpBtn" type="button" style="margin-bottom:0" onclick="openGrpPickerSession()"><i class="ti ti-tag"></i><span>Nessun gruppo</span></button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="eHGrpName" style="font-size:14px;font-weight:600;color:var(--text)">Nessun gruppo</span>
+        <button class="bi bi-sm" type="button" onclick="openGrpPickerSession()"><i class="ti ti-pencil"></i></button>
+      </div>
     </div>
     <div style="display:flex;gap:10px">
       <div class="ig" style="flex:1"><label class="il">Data</label><input class="inf" type="date" id="eHData"></div>
@@ -955,10 +958,8 @@ function renderEHGrpButton(){
   const show=ls(GK).length>0;
   wrap.style.display=show?'block':'none';
   if(!show)return;
-  const btn=document.getElementById('eHGrpBtn');
-  btn.classList.toggle('active',_eHGruppiTemp.length>0);
-  const lbl=btn.querySelector('span');
-  lbl.textContent=_eHGruppiTemp.length?grpFilterLabel(_eHGruppiTemp):'Nessun gruppo';
+  const nameEl=document.getElementById('eHGrpName');
+  if(nameEl) nameEl.textContent=_eHGruppiTemp.length?grpFilterLabel(_eHGruppiTemp):'Nessun gruppo';
 }
 
 function openSettings(){renderGruppiMgmt();openM('mSettings');}
