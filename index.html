@@ -276,7 +276,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.9</span></div>
+  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.6</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openSettings()">
       <div class="sync-dot" id="syncDot"></div>
@@ -1448,9 +1448,9 @@ function setPhase(ph){
     <div class="sexname">${esc(ex.nome)}</div>
     <div class="qe-current-settings">${esc(exInfoLine(ex))}</div>
     ${ex.nota?`<div class="snote">${esc(ex.nota)}</div>`:''}`;
-  const skipExBtn=`<button class="acbtn abskipex" onclick="skipExercise()"><i class="ti ti-player-skip-forward"></i> Skip esercizio</button>`;
-  const terminaExBtn=`<button class="acbtn abskipex" onclick="terminateFromExercise()"><i class="ti ti-player-stop"></i> Termina esercizio</button>`;
-  const terminaRestBtn=`<button class="acbtn abskipex" onclick="terminateFromRest()"><i class="ti ti-player-stop"></i> Termina esercizio</button>`;
+  const skipExBtn=`<button class="acbtn abskipex" onclick="skipExercise()">Skip esercizio</button>`;
+  const terminaExBtn=`<button class="acbtn abskipex" onclick="terminateFromExercise()">Termina esercizio</button>`;
+  const terminaRestBtn=`<button class="acbtn abskipex" onclick="terminateFromRest()">Termina esercizio</button>`;
   const exSkipOrTerminaBtn = S.serIdx>=1 ? terminaExBtn : skipExBtn;
 
   // next-ex preview block (used in READY, COUNTDOWN, CHRON)
@@ -1471,7 +1471,7 @@ function setPhase(ph){
       ${nextExPreview('Prossimo esercizio')}
       ${tRingHTML(20,20,'sec')}
       <button class="acbtn abstart" onclick="doStart()">START</button>
-      <button class="acbtn abskip" onclick="goExercise()">Skip Pausa</button>
+      <button class="acbtn abskip" onclick="skipReady()">Skip Pausa</button>
       ${skipExBtn}${backBtnHTML()}`;
     setTDisp(20,20);
   } else if(ph==='COUNTDOWN'){
@@ -1480,9 +1480,9 @@ function setPhase(ph){
       ${nextExPreview('Prossimo esercizio')}
       ${tRingHTML(S.tL,S.tT,'sec')}
       <button class="acbtn abpause" id="bpause" onclick="togPause()">Pausa</button>
-      <button class="acbtn abskip" onclick="goExercise()">Skip Pausa</button>
+      <button class="acbtn abskip" onclick="skipRest()">Skip Pausa</button>
       ${skipExBtn}${backBtnHTML()}`;
-    runTimer(S.tL,()=>goExercise());
+    runTimer(S.tL,()=>goExercise(),null,S.tT);
   } else if(ph==='EXERCISE'){
     if(ex.tipo==='dinamico'){
       sb.innerHTML=`${exHead}${serLbl}
@@ -1649,8 +1649,8 @@ function setTDisp(t,tot,mode){
     c.style.stroke=mode==='hold'?(t<=3&&tot>3?'var(--red)':'var(--accent)'):(t<=3&&tot>3?'var(--red)':'var(--orange)');
   }
 }
-function runTimer(secs,onEnd,mode){
-  S.tL=secs;S.tT=secs;clearInterval(S.timer);
+function runTimer(secs,onEnd,mode,tot){
+  S.tL=secs;S.tT=(tot!==undefined&&tot!==null)?tot:secs;clearInterval(S.timer);
   S.timer=setInterval(()=>{
     if(S.paused)return;S.tL--;
     if(S.tL<=3&&S.tL>0)bS();
@@ -1681,6 +1681,7 @@ function backBtnHTML(){
 }
 
 function doStart(){pushHist();S.tL=20;S.tT=20;setPhase('COUNTDOWN');}
+function skipReady(){pushHist();S.tL=4;S.tT=20;setPhase('COUNTDOWN');}
 function goExercise(){pushHist();clearInterval(S.timer);setPhase('EXERCISE');}
 function serieDone(){
   pushHist();
@@ -1700,7 +1701,7 @@ function emomCycleDone(){
     setPhase('EXERCISE'); // ricomincia subito il prossimo ciclo, niente pausa
   }
 }
-function skipRest(){pushHist();clearInterval(S.timer);nextSerie();}
+function skipRest(){if(S.tL>4){S.tL=4;setTDisp(S.tL,S.tT);}}
 function nextSerie(){
   S.serIdx++;setPhase('EXERCISE');
   const ex=S.scheda.esercizi[S.exIdx];
