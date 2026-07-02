@@ -540,6 +540,7 @@ async function flushPendingSync(){
   if(!navigator.onLine) return;
   let q=ls(PSK);
   if(!q.length) return;
+  try{ await DB.auth.refreshSession(); }catch(e){} // assicura un token valido dopo un periodo offline
   setSyncDot('syncing');
   const remaining=[];
   for(const item of q){
@@ -603,8 +604,9 @@ async function saveSchedaToDB(schedaObj,isRetry){
 async function deleteSchedaFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
-    const {error} = await DB.from('workouts').delete().eq('id',id);
+    const {data,error} = await DB.from('workouts').delete().eq('id',id).select();
     if(error) throw error;
+    if(!data||!data.length) throw new Error('0 righe eliminate (token scaduto o riga già assente)');
     setSyncDot('ok');
     return true;
   }catch(e){console.error('deleteSchedaFromDB',e);if(!isRetry)queuePending('deleteSchedaFromDB',id);else setSyncDot('error');return false;}
@@ -623,8 +625,9 @@ async function saveGruppoToDB(g,isRetry){
 async function deleteGruppoFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
-    const {error} = await DB.from('gruppi').delete().eq('id',id);
+    const {data,error} = await DB.from('gruppi').delete().eq('id',id).select();
     if(error) throw error;
+    if(!data||!data.length) throw new Error('0 righe eliminate (token scaduto o riga già assente)');
     setSyncDot('ok');
     return true;
   }catch(e){console.error('deleteGruppoFromDB',e);if(!isRetry)queuePending('deleteGruppoFromDB',id);else setSyncDot('error');return false;}
@@ -650,8 +653,9 @@ async function saveSessionToDB(sessObj,isRetry){
 async function deleteSessionFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
-    const {error} = await DB.from('sessions').delete().eq('id',id);
+    const {data,error} = await DB.from('sessions').delete().eq('id',id).select();
     if(error) throw error;
+    if(!data||!data.length) throw new Error('0 righe eliminate (token scaduto o riga già assente)');
     setSyncDot('ok');
     return true;
   }catch(e){console.error('deleteSessionFromDB',e);if(!isRetry)queuePending('deleteSessionFromDB',id);else setSyncDot('error');return false;}
@@ -661,8 +665,9 @@ async function deleteSessionFromDB(id,isRetry){
 async function updateSessionInDB(sessObj,isRetry){
   setSyncDot('syncing');
   try{
-    const {error} = await DB.from('sessions').update({data:sessObj, completed_at:sessObj.data}).eq('id',sessObj.id);
+    const {data,error} = await DB.from('sessions').update({data:sessObj, completed_at:sessObj.data}).eq('id',sessObj.id).select();
     if(error) throw error;
+    if(!data||!data.length) throw new Error('0 righe aggiornate (token scaduto o riga assente)');
     setSyncDot('ok');
     return true;
   }catch(e){console.error('updateSessionInDB',e);if(!isRetry)queuePending('updateSessionInDB',sessObj);else setSyncDot('error');return false;}
