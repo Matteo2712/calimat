@@ -282,7 +282,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.8</span></div>
+  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.9</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openSettings()">
       <div class="sync-dot" id="syncDot"></div>
@@ -526,8 +526,37 @@ function setSyncDot(state){ // 'ok' | 'syncing' | 'error'
   d.className='sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
 }
 
+// ─── OFFLINE SYNC QUEUE ─────────────────────────────
+// Se una chiamata a Supabase fallisce (es. offline), la mettiamo in coda
+// invece di perderla. Riproviamo quando torna la connessione.
+const PSK = 'cm_pending_sync';
+function queuePending(fn,arg){
+  const q=ls(PSK);
+  q.push({fn,arg,ts:Date.now()});
+  ss(PSK,q);
+  setSyncDot('error');
+}
+async function flushPendingSync(){
+  if(!navigator.onLine) return;
+  let q=ls(PSK);
+  if(!q.length) return;
+  setSyncDot('syncing');
+  const remaining=[];
+  for(const item of q){
+    try{
+      const ok = await DB_SYNC_FNS[item.fn](item.arg,true);
+      if(!ok) remaining.push(item);
+    }catch(e){ remaining.push(item); }
+  }
+  ss(PSK,remaining);
+  setSyncDot(remaining.length?'error':'ok');
+}
+window.addEventListener('online', flushPendingSync);
+setInterval(()=>{ if(navigator.onLine) flushPendingSync(); }, 30000);
+
 // ─── SUPABASE: CARICA DATI UTENTE ──────────────────
 async function loadFromDB(){
+  await flushPendingSync(); // invia prima eventuali modifiche offline non ancora sincronizzate
   setSyncDot('syncing');
   try{
     const [wRes, hRes] = await Promise.all([
@@ -552,7 +581,7 @@ async function loadFromDB(){
 }
 
 // ─── SUPABASE: SALVA SCHEDA ────────────────────────
-async function saveSchedaToDB(schedaObj){
+async function saveSchedaToDB(schedaObj,isRetry){
   setSyncDot('syncing');
   try{
     const {error} = await DB.from('workouts').upsert({
@@ -564,39 +593,43 @@ async function saveSchedaToDB(schedaObj){
     },{onConflict:'id'});
     if(error) throw error;
     setSyncDot('ok');
-  }catch(e){console.error('saveSchedaToDB',e);setSyncDot('error');}
+    return true;
+  }catch(e){console.error('saveSchedaToDB',e);if(!isRetry)queuePending('saveSchedaToDB',schedaObj);else setSyncDot('error');return false;}
 }
 
 // ─── SUPABASE: ELIMINA SCHEDA ──────────────────────
-async function deleteSchedaFromDB(id){
+async function deleteSchedaFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
     const {error} = await DB.from('workouts').delete().eq('id',id);
     if(error) throw error;
     setSyncDot('ok');
-  }catch(e){console.error('deleteSchedaFromDB',e);setSyncDot('error');}
+    return true;
+  }catch(e){console.error('deleteSchedaFromDB',e);if(!isRetry)queuePending('deleteSchedaFromDB',id);else setSyncDot('error');return false;}
 }
 
 // ─── SUPABASE: SALVA/ELIMINA GRUPPO ────────────────
-async function saveGruppoToDB(g){
+async function saveGruppoToDB(g,isRetry){
   setSyncDot('syncing');
   try{
     const {error} = await DB.from('gruppi').upsert({id:g.id,user_id:_currentUser.id,nome:g.nome},{onConflict:'id'});
     if(error) throw error;
     setSyncDot('ok');
-  }catch(e){console.error('saveGruppoToDB',e);setSyncDot('error');}
+    return true;
+  }catch(e){console.error('saveGruppoToDB',e);if(!isRetry)queuePending('saveGruppoToDB',g);else setSyncDot('error');return false;}
 }
-async function deleteGruppoFromDB(id){
+async function deleteGruppoFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
     const {error} = await DB.from('gruppi').delete().eq('id',id);
     if(error) throw error;
     setSyncDot('ok');
-  }catch(e){console.error('deleteGruppoFromDB',e);setSyncDot('error');}
+    return true;
+  }catch(e){console.error('deleteGruppoFromDB',e);if(!isRetry)queuePending('deleteGruppoFromDB',id);else setSyncDot('error');return false;}
 }
 
 // ─── SUPABASE: SALVA SESSIONE ──────────────────────
-async function saveSessionToDB(sessObj){
+async function saveSessionToDB(sessObj,isRetry){
   setSyncDot('syncing');
   try{
     const {error} = await DB.from('sessions').insert({
@@ -607,28 +640,37 @@ async function saveSessionToDB(sessObj){
     });
     if(error) throw error;
     setSyncDot('ok');
-  }catch(e){console.error('saveSessionToDB',e);setSyncDot('error');}
+    return true;
+  }catch(e){console.error('saveSessionToDB',e);if(!isRetry)queuePending('saveSessionToDB',sessObj);else setSyncDot('error');return false;}
 }
 
 // ─── SUPABASE: ELIMINA SESSIONE ────────────────────
-async function deleteSessionFromDB(id){
+async function deleteSessionFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
     const {error} = await DB.from('sessions').delete().eq('id',id);
     if(error) throw error;
     setSyncDot('ok');
-  }catch(e){console.error('deleteSessionFromDB',e);setSyncDot('error');}
+    return true;
+  }catch(e){console.error('deleteSessionFromDB',e);if(!isRetry)queuePending('deleteSessionFromDB',id);else setSyncDot('error');return false;}
 }
 
 // ─── SUPABASE: AGGIORNA SESSIONE ───────────────────
-async function updateSessionInDB(sessObj){
+async function updateSessionInDB(sessObj,isRetry){
   setSyncDot('syncing');
   try{
     const {error} = await DB.from('sessions').update({data:sessObj, completed_at:sessObj.data}).eq('id',sessObj.id);
     if(error) throw error;
     setSyncDot('ok');
-  }catch(e){console.error('updateSessionInDB',e);setSyncDot('error');}
+    return true;
+  }catch(e){console.error('updateSessionInDB',e);if(!isRetry)queuePending('updateSessionInDB',sessObj);else setSyncDot('error');return false;}
 }
+
+const DB_SYNC_FNS = {
+  saveSchedaToDB, deleteSchedaFromDB,
+  saveGruppoToDB, deleteGruppoFromDB,
+  saveSessionToDB, deleteSessionFromDB, updateSessionInDB
+};
 
 // ─── AUTH: LOGIN SCREEN ────────────────────────────
 function lsShowTab(tab){
