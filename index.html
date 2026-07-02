@@ -282,7 +282,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.6</span></div>
+  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.7</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openSettings()">
       <div class="sync-dot" id="syncDot"></div>
@@ -421,6 +421,10 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
         <i class="ti ti-upload"></i> Importa backup (JSON)
         <input type="file" accept=".json" style="display:none" onchange="importData(this)">
       </label>
+    </div>
+    <div class="stitle">Condividi schede</div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px">
+      <button class="btn bg bw" onclick="exportAllSchedeCSV()"><i class="ti ti-file-spreadsheet"></i> Esporta tutte le schede (CSV)</button>
     </div>
     <div class="stitle">Pericoloso</div>
     <button class="btn bd bw" onclick="resetAll()"><i class="ti ti-alert-triangle"></i> Cancella tutti i dati</button>
@@ -1067,6 +1071,7 @@ function renderSchede(){
             <div class="opt-menu" id="optS_${s.id}">
               <button onclick="closeOptMenus();openEditScheda('${s.id}')"><i class="ti ti-edit"></i> Modifica</button>
               <button onclick="closeOptMenus();dupeScheda('${s.id}')"><i class="ti ti-copy"></i> Duplica</button>
+              <button onclick="closeOptMenus();exportSchedaCSV('${s.id}')"><i class="ti ti-file-spreadsheet"></i> Esporta CSV</button>
               <button class="opt-danger" onclick="closeOptMenus();askDelScheda('${s.id}')"><i class="ti ti-trash"></i> Cancella</button>
             </div>
           </div>
@@ -2082,6 +2087,45 @@ function exportData(){
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='calimat_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+
+// ─── EXPORT CSV SCHEDE (per allenatori / analisi esterna) ────
+function csvEsc(v){
+  v=String(v??'');
+  if(/[",\r\n]/.test(v)) v='"'+v.replace(/"/g,'""')+'"';
+  return v;
+}
+function exRowCSV(e){
+  const repsCol=e.tipo==='emom'?e.reps+'s (EMOM)':(e.tipo==='statico'?e.reps+'s':e.reps);
+  const pausaCol=e.tipo==='emom'?'':(e.pausa||'');
+  return [e.nome, e.serie, repsCol, e.kg||'', pausaCol];
+}
+async function shareOrDownloadFile(filename,mime,content){
+  const blob=new Blob(['\uFEFF'+content],{type:mime});
+  const file=new File([blob],filename,{type:mime});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:filename}); return; }
+    catch(e){ if(e.name==='AbortError') return; }
+  }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function exportSchedaCSV(id){
+  const s=ls(SK).find(x=>x.id===id);if(!s)return;
+  const header=['Esercizio','Serie','Reps/Secondi','Zavorra (kg)','Pausa (s)'];
+  const rows=s.esercizi.map(exRowCSV);
+  const csv=[header,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
+  shareOrDownloadFile('CaliMat_'+s.nome.replace(/[^a-z0-9]+/gi,'_')+'.csv','text/csv',csv);
+}
+function exportAllSchedeCSV(){
+  const schede=ls(SK);
+  if(!schede.length){alert2('Nessuna scheda da esportare.');return;}
+  const header=['Scheda','Esercizio','Serie','Reps/Secondi','Zavorra (kg)','Pausa (s)'];
+  const rows=[];
+  schede.forEach(s=>s.esercizi.forEach(e=>rows.push([s.nome,...exRowCSV(e)])));
+  const csv=[header,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
+  shareOrDownloadFile('CaliMat_schede_'+new Date().toISOString().slice(0,10)+'.csv','text/csv',csv);
 }
 function importData(inp){
   const f=inp.files[0];if(!f)return;
