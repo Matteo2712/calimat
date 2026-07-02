@@ -282,7 +282,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.9</span></div>
+  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.7</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openSettings()">
       <div class="sync-dot" id="syncDot"></div>
@@ -552,7 +552,9 @@ async function flushPendingSync(){
   setSyncDot(remaining.length?'error':'ok');
 }
 window.addEventListener('online', flushPendingSync);
-setInterval(()=>{ if(navigator.onLine) flushPendingSync(); }, 30000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) flushPendingSync(); });
+window.addEventListener('focus', flushPendingSync);
+setInterval(()=>{ if(navigator.onLine) flushPendingSync(); }, 10000);
 
 // ─── SUPABASE: CARICA DATI UTENTE ──────────────────
 async function loadFromDB(){

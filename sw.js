@@ -33,9 +33,14 @@ self.addEventListener('notificationclick', e => {
 });
 
 // Fetch: network-first, con fallback alla cache quando offline.
-// Ogni risposta valida viene salvata in cache per la prossima volta offline.
+// Interveniamo SOLO sulle richieste stesso-dominio (l'app stessa).
+// Le chiamate a Supabase (dominio esterno) passano dritte al browser:
+// se falliscono per mancanza di rete devono fallire davvero (errore di rete
+// normale), non ricevere una finta risposta 503 che confonderebbe il
+// codice dell'app facendogli credere che la richiesta sia "andata a buon fine".
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return; // lascia passare POST/PUT (es. chiamate Supabase) senza intercettarle
+  if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== self.location.origin) return;
 
   e.respondWith(
     fetch(e.request)
