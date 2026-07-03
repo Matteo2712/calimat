@@ -530,9 +530,10 @@ function setSyncDot(state){ // 'ok' | 'syncing' | 'error'
 // Se una chiamata a Supabase fallisce (es. offline), la mettiamo in coda
 // invece di perderla. Riproviamo quando torna la connessione.
 const PSK = 'cm_pending_sync';
+const MAX_SYNC_RETRIES = 8; // oltre questo numero di tentativi falliti, l'item resta in coda ma non fa più lampeggiare il led ad ogni retry automatico
 function queuePending(fn,arg){
   const q=ls(PSK);
-  q.push({fn,arg,ts:Date.now()});
+  q.push({fn,arg,ts:Date.now(),attempts:0});
   ss(PSK,q);
   setSyncDot('error');
 }
@@ -543,14 +544,17 @@ async function flushPendingSync(){
   try{ await DB.auth.refreshSession(); }catch(e){} // assicura un token valido dopo un periodo offline
   setSyncDot('syncing');
   const remaining=[];
+  let anyFailedUnderLimit=false;
   for(const item of q){
+    const attempts=item.attempts||0;
+    if(attempts>=MAX_SYNC_RETRIES){ remaining.push(item); continue; } // stop retry automatico, resta in coda silenziosamente
     try{
       const ok = await DB_SYNC_FNS[item.fn](item.arg,true);
-      if(!ok) remaining.push(item);
-    }catch(e){ remaining.push(item); }
+      if(!ok){ item.attempts=attempts+1; remaining.push(item); anyFailedUnderLimit=true; }
+    }catch(e){ item.attempts=attempts+1; remaining.push(item); anyFailedUnderLimit=true; }
   }
   ss(PSK,remaining);
-  setSyncDot(remaining.length?'error':'ok');
+  setSyncDot(anyFailedUnderLimit?'error':'ok');
 }
 window.addEventListener('online', flushPendingSync);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) flushPendingSync(); });
@@ -601,12 +605,26 @@ async function saveSchedaToDB(schedaObj,isRetry){
 }
 
 // ─── SUPABASE: ELIMINA SCHEDA ──────────────────────
+// Elimina una riga e verifica il risultato. Se la delete riporta 0 righe,
+// non è detto sia un fallimento: potrebbe essere già stata eliminata in un
+// tentativo precedente. Controlliamo se la riga esiste ancora prima di
+// giudicare l'operazione riuscita o no (evita retry infiniti su un'operazione
+// già completata, che farebbero sbattere il led online/offline all'infinito).
+async function deleteRowVerified(table,id){
+  const {data,error} = await DB.from(table).delete().eq('id',id).select();
+  if(error) throw error;
+  if(data && data.length) return true; // eliminata ora, ok
+  const {data:check,error:checkErr} = await DB.from(table).select('id').eq('id',id).limit(1);
+  if(checkErr) throw checkErr;
+  if(!check || !check.length) return true; // non esiste più: obiettivo già raggiunto
+  return false; // esiste ancora ma la delete non l'ha toccata: problema reale (token/permessi), riprova
+}
+
 async function deleteSchedaFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
-    const {data,error} = await DB.from('workouts').delete().eq('id',id).select();
-    if(error) throw error;
-    if(!data||!data.length) throw new Error('0 righe eliminate (token scaduto o riga già assente)');
+    const ok = await deleteRowVerified('workouts',id);
+    if(!ok) throw new Error('riga presente ma non eliminabile (probabile token/permessi)');
     setSyncDot('ok');
     return true;
   }catch(e){console.error('deleteSchedaFromDB',e);if(!isRetry)queuePending('deleteSchedaFromDB',id);else setSyncDot('error');return false;}
@@ -625,9 +643,8 @@ async function saveGruppoToDB(g,isRetry){
 async function deleteGruppoFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
-    const {data,error} = await DB.from('gruppi').delete().eq('id',id).select();
-    if(error) throw error;
-    if(!data||!data.length) throw new Error('0 righe eliminate (token scaduto o riga già assente)');
+    const ok = await deleteRowVerified('gruppi',id);
+    if(!ok) throw new Error('riga presente ma non eliminabile (probabile token/permessi)');
     setSyncDot('ok');
     return true;
   }catch(e){console.error('deleteGruppoFromDB',e);if(!isRetry)queuePending('deleteGruppoFromDB',id);else setSyncDot('error');return false;}
@@ -653,9 +670,8 @@ async function saveSessionToDB(sessObj,isRetry){
 async function deleteSessionFromDB(id,isRetry){
   setSyncDot('syncing');
   try{
-    const {data,error} = await DB.from('sessions').delete().eq('id',id).select();
-    if(error) throw error;
-    if(!data||!data.length) throw new Error('0 righe eliminate (token scaduto o riga già assente)');
+    const ok = await deleteRowVerified('sessions',id);
+    if(!ok) throw new Error('riga presente ma non eliminabile (probabile token/permessi)');
     setSyncDot('ok');
     return true;
   }catch(e){console.error('deleteSessionFromDB',e);if(!isRetry)queuePending('deleteSessionFromDB',id);else setSyncDot('error');return false;}
