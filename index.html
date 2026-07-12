@@ -827,7 +827,8 @@ const relWL=()=>{if(_wl){_wl.release();_wl=null;}};
 // Standard GATT Heart Rate Service (0x180D) / Measurement Characteristic (0x2A37).
 // Connessione manuale (tasto), non blocca mai la sessione se assente/persa.
 const HRDK='cm_hr_device_id';
-let _hrDevice=null, _hrChar=null, _hrCurrent=null;
+const HR_STALE_MS=15000; // se non arrivano notifiche da 15s, il segnale è considerato perso (fascia tolta/lontana)
+let _hrDevice=null, _hrChar=null, _hrCurrent=null, _hrLastNotifyTs=0, _hrWatchdog=null;
 
 function hrParseBpm(dv){
   // primo byte = flags; bit0=0 → bpm su UINT8, bit0=1 → UINT16
@@ -837,9 +838,13 @@ function hrParseBpm(dv){
 
 function hrOnNotify(ev){
   const bpm=hrParseBpm(ev.target.value);
+  if(!bpm)return; // letture a 0/non valide: ignora, non sovrascrivere il display
   _hrCurrent=bpm;
+  _hrLastNotifyTs=Date.now();
   const el=document.getElementById('hrBpm');
   if(el)el.textContent=bpm+' BPM';
+  const t=document.getElementById('hrToggle');
+  if(t)t.classList.add('hr-on');
   hrFeedSample(bpm);
 }
 
@@ -849,7 +854,7 @@ function hrFeedSample(bpm){
   // campioni per il grafico: throttlati a 1 ogni 2s (2h di sessione ≈ 3600 punti)
   if(!S._hrLastSampleT || now-S._hrLastSampleT>=2000){
     S._hrLastSampleT=now;
-    S.hrSamples.push({t:now,bpm,exIdx:S.exIdx});
+    S.hrSamples.push({t:now,bpm,exIdx:S.exIdx,phase:S.phase});
   }
   // aggregati per esercizio corrente: sempre, non throttlati
   const d=S.done[S.exIdx];
@@ -874,8 +879,24 @@ function hrSetToggleUI(connected){
   const bpmEl=document.getElementById('hrBpm');
   if(!t)return;
   t.classList.toggle('hr-on',connected);
-  if(bpmEl)bpmEl.textContent=connected?'-- BPM':'';
+  if(bpmEl)bpmEl.textContent=connected?'— BPM':'';
 }
+
+function hrMarkStale(){
+  // fascia ancora "connessa" a livello BLE ma non manda più dati da un po' (es. tolta dal petto):
+  // mostriamo lo stato come scollegato visivamente, senza chiudere la connessione,
+  // così torna rossa da sola appena ricomincia a mandare dati.
+  _hrCurrent=null;
+  hrSetToggleUI(false);
+}
+
+function hrStartWatchdog(){
+  clearInterval(_hrWatchdog);
+  _hrWatchdog=setInterval(()=>{
+    if(_hrLastNotifyTs && Date.now()-_hrLastNotifyTs>HR_STALE_MS)hrMarkStale();
+  },5000);
+}
+function hrStopWatchdog(){clearInterval(_hrWatchdog);_hrWatchdog=null;}
 
 async function hrTryAutoReconnect(){
   // Se il browser supporta i permessi persistenti BLE (getDevices), prova a
@@ -904,7 +925,9 @@ async function hrConnectToDevice(device){
   await _hrChar.startNotifications();
   _hrChar.addEventListener('characteristicvaluechanged',hrOnNotify);
   localStorage.setItem(HRDK,_hrDevice.id);
+  _hrLastNotifyTs=Date.now();
   hrSetToggleUI(true);
+  hrStartWatchdog();
 }
 
 async function toggleHRConnect(){
@@ -933,6 +956,7 @@ async function toggleHRConnect(){
 
 function hrOnDisconnected(){
   _hrChar=null;_hrCurrent=null;
+  hrStopWatchdog();
   hrSetToggleUI(false);
 }
 
@@ -1574,7 +1598,7 @@ function startSession(id){
     kg:e.kg,pausa:e.pausa,
     nota:e.nota||'',
     serie_fatte:0,done:null,skipped:false,
-    hr:{pre:null,max:0,sum:0,count:0,recoverySum:0,recoveryCount:0}
+    hr:{pre:null,end:null,max:0,sum:0,count:0,recoverySum:0,recoveryCount:0}
   }));
   S.hrSamples=[];S._hrLastSampleT=0;S._hrRestStartBpm=null;
   reqWL();
@@ -1777,6 +1801,9 @@ function setPhase(ph){
       if(el)el.textContent=m+':'+String(sec).padStart(2,'0');
     },1000);
   } else if(ph==='CONFIRM'){
+    if(S.done[S.exIdx] && S.done[S.exIdx].hr && _hrCurrent!=null){
+      S.done[S.exIdx].hr.end=_hrCurrent;
+    }
     _confirmEnterTS=Date.now();
     const earlyLbl=S._earlyExitLabel;
     sb.innerHTML=`
@@ -2237,47 +2264,154 @@ function deleteSession(){
 
 // ─── STATS ───────────────────────────────────────────
 const HR_PALETTE=['#ff6b6b','#4ecdc4','#ffd93d','#6c5ce7','#00b894','#e17055','#0984e3','#fd79a8','#fdcb6e','#00cec9'];
-function hrExDelta(e){ if(!e.hr || e.hr.pre==null || !e.hr.max) return null; return e.hr.max-e.hr.pre; }
+function hrExDelta(e){
+  if(!e.hr || e.hr.pre==null) return null;
+  // se il picco è stato superato DURANTE l'esercizio (non solo all'inizio), è sforzo reale
+  if(e.hr.max>e.hr.pre) return e.hr.max-e.hr.pre;
+  // altrimenti il battito non è mai salito oltre il valore di partenza: probabile esercizio
+  // defaticante (es. dopo uno sforzo intenso, il battito parte alto e scende) → uso l'andamento reale
+  if(e.hr.end!=null) return e.hr.end-e.hr.pre;
+  return null;
+}
+function hrExIsRealPeak(e){ return e.hr && e.hr.pre!=null && e.hr.max>e.hr.pre; }
 function hrExAvg(e){ if(!e.hr || !e.hr.count) return null; return Math.round(e.hr.sum/e.hr.count); }
 function hrExRecovery(e){ if(!e.hr || !e.hr.recoveryCount) return null; return Math.round(e.hr.recoverySum/e.hr.recoveryCount); }
 
-function hrChartSVG(s){
-  const samples=s.hrSamples;
-  if(!samples || samples.length<2) return '';
-  const bpms=samples.map(x=>x.bpm);
-  const minB=Math.min(...bpms)-5, maxB=Math.max(...bpms)+5;
-  const W=300,H=110,PAD=4;
-  const xs=i=>PAD+(i/(samples.length-1))*(W-PAD*2);
-  const ys=b=>H-PAD-((b-minB)/(maxB-minB))*(H-PAD*2);
-  // trova i punti dove cambia l'esercizio (segmenti contigui)
-  const boundaries=[0];
-  for(let i=1;i<samples.length;i++){ if(samples[i].exIdx!==samples[i-1].exIdx) boundaries.push(i); }
-  boundaries.push(samples.length);
-  let paths='';
-  for(let k=0;k<boundaries.length-1;k++){
-    const start=boundaries[k], end=boundaries[k+1];
-    const from=k===0?start:start-1; // include il punto precedente per continuità della linea
-    const exIdx=samples[start].exIdx;
-    const color=HR_PALETTE[exIdx%HR_PALETTE.length];
-    let d='';
-    for(let i=from;i<end;i++) d+=(i===from?'M':'L')+xs(i).toFixed(1)+','+ys(samples[i].bpm).toFixed(1)+' ';
-    paths+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+const _hrCharts={}; // stato per-sessione dei grafici aperti (per pinch-zoom)
+
+function hrCanvasHTML(s){
+  if(!s.hrSamples || s.hrSamples.length<2) return '';
+  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:700">Andamento battito <span style="text-transform:none;letter-spacing:0">(pizzica per zoomare)</span></div>
+      <div id="hrZoomReset_${s.id}" onclick="hrResetZoom('${s.id}')" style="font-size:10px;color:var(--accent);font-weight:700;cursor:pointer;display:none">Reset zoom</div>
+    </div>
+    <div style="touch-action:none"><canvas id="hrCanvas_${s.id}" style="width:100%;height:120px;display:block"></canvas></div>
+    <div id="hrLegend_${s.id}" style="margin-top:6px;line-height:1.8"></div>
+  </div>`;
+}
+
+function hrSetupCanvasDPR(canvas){
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  const w=rect.width||300,h=120;
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+  canvas.style.height=h+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  canvas._cssW=w;canvas._cssH=h;
+}
+
+function hrSegColor(p){ return p.phase==='EXERCISE' ? HR_PALETTE[p.exIdx%HR_PALETTE.length] : 'rgba(140,140,140,.55)'; }
+
+function drawHRChart(state){
+  const canvas=document.getElementById('hrCanvas_'+state.s.id);
+  if(!canvas)return;
+  if(!canvas._cssW)hrSetupCanvasDPR(canvas);
+  const ctx=canvas.getContext('2d');
+  const W=canvas._cssW,H=canvas._cssH,PADL=30,PADR=6,PADT=6,PADB=6;
+  ctx.clearRect(0,0,W,H);
+  const samples=state.samples;
+  // campioni visibili nella finestra di zoom corrente (asse X = tempo reale, non indice)
+  let lo=0;while(lo<samples.length && samples[lo].t<state.viewT0)lo++;
+  if(lo>0)lo--;
+  let hi=samples.length-1;while(hi>0 && samples[hi].t>state.viewT1)hi--;
+  if(hi<samples.length-1)hi++;
+  const vis=samples.slice(lo,hi+1);
+  if(vis.length<2)return;
+  // range Y fisso sull'intera sessione (assi stabili durante lo zoom), arrotondato a step di 20
+  const bpms=samples.map(p=>p.bpm);
+  const minB=Math.floor((Math.min(...bpms)-5)/20)*20;
+  const maxB=Math.ceil((Math.max(...bpms)+5)/20)*20;
+  const xOf=t=>PADL+((t-state.viewT0)/(state.viewT1-state.viewT0))*(W-PADL-PADR);
+  const yOf=b=>H-PADB-((b-minB)/(maxB-minB))*(H-PADT-PADB);
+  // griglia orizzontale ogni 20 bpm
+  ctx.strokeStyle='rgba(140,140,140,.25)';ctx.lineWidth=1;ctx.font='9px sans-serif';
+  ctx.fillStyle='rgba(140,140,140,.8)';ctx.textBaseline='middle';
+  for(let b=minB;b<=maxB;b+=20){
+    const y=yOf(b);
+    ctx.beginPath();ctx.moveTo(PADL,y);ctx.lineTo(W-PADR,y);ctx.stroke();
+    ctx.fillText(b,2,y);
   }
-  // legenda: esercizi unici nell'ordine di comparsa
+  // linee tratteggiate: media sessione (verde) e massimo sessione (rosso)
+  ctx.setLineDash([4,3]);
+  if(state.s.hr_avg!=null){
+    ctx.strokeStyle='#00b894';ctx.beginPath();ctx.moveTo(PADL,yOf(state.s.hr_avg));ctx.lineTo(W-PADR,yOf(state.s.hr_avg));ctx.stroke();
+  }
+  if(state.s.hr_max!=null){
+    ctx.strokeStyle='#ff4757';ctx.beginPath();ctx.moveTo(PADL,yOf(state.s.hr_max));ctx.lineTo(W-PADR,yOf(state.s.hr_max));ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  // curva: colorata durante l'esercizio, grigia durante le pause (riposo/transizioni/attesa)
+  ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
+  for(let i=1;i<vis.length;i++){
+    const a=vis[i-1],b=vis[i];
+    ctx.strokeStyle=hrSegColor(b);
+    ctx.beginPath();ctx.moveTo(xOf(a.t),yOf(a.bpm));ctx.lineTo(xOf(b.t),yOf(b.bpm));ctx.stroke();
+  }
+}
+
+function renderHRLegend(s){
+  const el=document.getElementById('hrLegend_'+s.id);if(!el)return;
   const seen=new Set();const legend=[];
-  samples.forEach(pt=>{
-    if(!seen.has(pt.exIdx)){
-      seen.add(pt.exIdx);
-      const nome=s.esercizi[pt.exIdx]?s.esercizi[pt.exIdx].nome:'?';
-      legend.push({exIdx:pt.exIdx,nome});
+  (s.hrSamples||[]).forEach(p=>{
+    if(p.phase==='EXERCISE' && !seen.has(p.exIdx)){
+      seen.add(p.exIdx);
+      const nome=s.esercizi[p.exIdx]?s.esercizi[p.exIdx].nome:'?';
+      legend.push({exIdx:p.exIdx,nome});
     }
   });
-  const legendHTML=legend.map(l=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);margin-right:8px"><span style="width:8px;height:8px;border-radius:50%;background:${HR_PALETTE[l.exIdx%HR_PALETTE.length]};display:inline-block"></span>${esc(l.nome)}</span>`).join('');
-  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-    <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;font-weight:700">Andamento battito</div>
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:90px;display:block">${paths}</svg>
-    <div style="margin-top:6px;line-height:1.8">${legendHTML}</div>
-  </div>`;
+  el.innerHTML=legend.map(l=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);margin-right:8px"><span style="width:8px;height:8px;border-radius:50%;background:${HR_PALETTE[l.exIdx%HR_PALETTE.length]};display:inline-block"></span>${esc(l.nome)}</span>`).join('')
+    +`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:rgba(140,140,140,.55);display:inline-block"></span>pausa</span>`;
+}
+
+function hrResetZoom(id){
+  const state=_hrCharts[id];if(!state)return;
+  state.viewT0=state.t0;state.viewT1=state.t1;
+  drawHRChart(state);
+  const btn=document.getElementById('hrZoomReset_'+id);if(btn)btn.style.display='none';
+}
+
+function initHRChart(s){
+  const canvas=document.getElementById('hrCanvas_'+s.id);
+  if(!canvas)return;
+  const samples=s.hrSamples;
+  const t0=samples[0].t,t1=samples[samples.length-1].t;
+  const state={s,samples,t0,t1,viewT0:t0,viewT1:t1};
+  _hrCharts[s.id]=state;
+  hrSetupCanvasDPR(canvas);
+  drawHRChart(state);
+  renderHRLegend(s);
+  let pinchDist0=null,pinchV0=null,pinchV1=null,pinchAnchorT=null;
+  const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  canvas.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){
+      pinchDist0=dist(e.touches);
+      pinchV0=state.viewT0;pinchV1=state.viewT1;
+      const rect=canvas.getBoundingClientRect();
+      const midX=(e.touches[0].clientX+e.touches[1].clientX)/2-rect.left;
+      pinchAnchorT=state.viewT0+(midX/rect.width)*(state.viewT1-state.viewT0);
+      e.preventDefault();
+    }
+  },{passive:false});
+  canvas.addEventListener('touchmove',e=>{
+    if(e.touches.length===2 && pinchDist0){
+      e.preventDefault();
+      const ratio=dist(e.touches)/pinchDist0;
+      const fullWidth=state.t1-state.t0;
+      const minWidth=Math.max(20000,fullWidth*0.02); // non zoomma oltre ~20s
+      let newWidth=Math.max(minWidth,Math.min(fullWidth,(pinchV1-pinchV0)/ratio));
+      const frac=(pinchAnchorT-pinchV0)/(pinchV1-pinchV0);
+      let nv0=pinchAnchorT-frac*newWidth,nv1=nv0+newWidth;
+      if(nv0<state.t0){nv0=state.t0;nv1=nv0+newWidth;}
+      if(nv1>state.t1){nv1=state.t1;nv0=nv1-newWidth;}
+      state.viewT0=nv0;state.viewT1=nv1;
+      drawHRChart(state);
+      const btn=document.getElementById('hrZoomReset_'+s.id);
+      if(btn)btn.style.display=(newWidth<fullWidth*0.98)?'block':'none';
+    }
+  },{passive:false});
+  canvas.addEventListener('touchend',e=>{if(e.touches.length<2)pinchDist0=null;});
 }
 
 function hrRankingHTML(s){
@@ -2287,7 +2421,7 @@ function hrRankingHTML(s){
   const top=rows.slice(0,3);
   return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;font-weight:700">Sforzo maggiore</div>
-    ${top.map((r,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${i+1}. ${esc(r.nome)}</span><span style="font-family:'Lucida Console',monospace;color:var(--red)">+${r.delta} bpm</span></div>`).join('')}
+    ${top.map((r,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${i+1}. ${esc(r.nome)}</span><span style="font-family:'Lucida Console',monospace;color:${r.delta>=0?'var(--red)':'var(--text3)'}">${r.delta>=0?'+':''}${r.delta} bpm</span></div>`).join('')}
   </div>`;
 }
 
@@ -2343,7 +2477,8 @@ function showDayHistory(y,m,d,el){
       <div class="hname" style="margin-bottom:8px">${esc(s.nomeScheda)} <span style="font-size:12px;color:var(--text3);font-weight:600">— ${ts}</span>${hrHead}</div>
       ${s.esercizi.map(e=>{
         const delta=hrExDelta(e),avg=hrExAvg(e),rec=hrExRecovery(e);
-        const hrInfo=(delta!=null)?`<span style="font-size:10px;color:var(--text3);font-family:'Lucida Console',monospace">${e.hr.pre}→${e.hr.max}bpm${avg!=null?' · avg '+avg:''}${rec!=null?' · rec '+rec:''}</span>`:'';
+        const isPeak=hrExIsRealPeak(e);
+        const hrInfo=(delta!=null)?`<span style="font-size:10px;color:var(--text3);font-family:'Lucida Console',monospace">${e.hr.pre}→${isPeak?e.hr.max:e.hr.end}bpm${isPeak?'':' (defaticante)'}${avg!=null?' · avg '+avg:''}${rec!=null?' · rec '+rec:''}</span>`:'';
         return `
         <div class="hex${e.skipped?' skipped':''}">
           <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
@@ -2354,9 +2489,10 @@ function showDayHistory(y,m,d,el){
         </div>${hrInfo?`<div style="text-align:right;margin-top:-4px;margin-bottom:4px">${hrInfo}</div>`:''}`;
       }).join('')}
       ${hrRankingHTML(s)}
-      ${hrChartSVG(s)}
+      ${hrCanvasHTML(s)}
     </div>`;
   }).join('');
+  sessions.forEach(s=>{ if(s.hrSamples && s.hrSamples.length>1) initHRChart(s); });
 }
 
 // ─── SETTINGS ────────────────────────────────────────
