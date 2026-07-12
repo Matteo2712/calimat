@@ -859,8 +859,7 @@ function hrFeedSample(bpm){
   // aggregati per esercizio corrente: sempre, non throttlati
   const d=S.done[S.exIdx];
   if(d && d.hr){
-    if(bpm>d.hr.max){d.hr.max=bpm;d.hr.maxT=now;}
-    if(bpm<d.hr.min){d.hr.min=bpm;d.hr.minT=now;}
+    if(bpm>d.hr.max)d.hr.max=bpm;
     d.hr.sum+=bpm;d.hr.count++;
   }
 }
@@ -1599,7 +1598,7 @@ function startSession(id){
     kg:e.kg,pausa:e.pausa,
     nota:e.nota||'',
     serie_fatte:0,done:null,skipped:false,
-    hr:{pre:null,end:null,max:0,maxT:null,min:Infinity,minT:null,sum:0,count:0,recoverySum:0,recoveryCount:0}
+    hr:{pre:null,end:null,max:0,sum:0,count:0,recoverySum:0,recoveryCount:0}
   }));
   S.hrSamples=[];S._hrLastSampleT=0;S._hrRestStartBpm=null;
   reqWL();
@@ -2266,13 +2265,11 @@ function deleteSession(){
 // ─── STATS ───────────────────────────────────────────
 const HR_PALETTE=['#ff6b6b','#4ecdc4','#ffd93d','#6c5ce7','#00b894','#e17055','#0984e3','#fd79a8','#fdcb6e','#00cec9'];
 function hrExDelta(e){
-  if(!e.hr || e.hr.min===Infinity || !e.hr.count) return null;
-  // se il massimo è arrivato dopo il minimo, il battito è salito durante l'esercizio: sforzo reale
-  if(e.hr.maxT>=e.hr.minT) return e.hr.max-e.hr.min;
-  // altrimenti il minimo è arrivato dopo il massimo: il battito è sceso durante l'esercizio (defaticante)
-  return e.hr.min-e.hr.max;
+  if(!e.hr || e.hr.pre==null || e.hr.end==null) return null;
+  if(e.hr.pre>e.hr.end) return e.hr.end-e.hr.pre; // il battito è sceso: negativo
+  return (e.hr.max||e.hr.end)-e.hr.pre; // il battito è salito/stabile: sforzo = picco - iniziale
 }
-function hrExIsRealPeak(e){ return e.hr && e.hr.min!==Infinity && e.hr.maxT>=e.hr.minT; }
+function hrExIsCalming(e){ return e.hr && e.hr.pre!=null && e.hr.end!=null && e.hr.pre>e.hr.end; }
 function hrExAvg(e){ if(!e.hr || !e.hr.count) return null; return Math.round(e.hr.sum/e.hr.count); }
 function hrExRecovery(e){ if(!e.hr || !e.hr.recoveryCount) return null; return Math.round(e.hr.recoverySum/e.hr.recoveryCount); }
 
@@ -2371,7 +2368,7 @@ function initHRChart(s){
   hrSetupCanvasDPR(canvas);
   drawHRChart(state);
   renderHRLegend(s);
-  let pinchDist0=null,pinchV0=null,pinchV1=null;
+  let pinchDist0=null,pinchAnchorT=null;
   let panX0=null,panV0=null,panV1=null;
   const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
   const midXFrac=(t,rect)=>((t[0].clientX+t[1].clientX)/2-rect.left)/rect.width;
@@ -2380,7 +2377,11 @@ function initHRChart(s){
     if(e.touches.length===2){
       panX0=null;
       pinchDist0=dist(e.touches);
-      pinchV0=state.viewT0;pinchV1=state.viewT1;
+      const rect=canvas.getBoundingClientRect();
+      const frac0=midXFrac(e.touches,rect);
+      // timestamp "sotto le dita" al momento in cui parte il gesto: resta fisso per tutta la durata del pinch
+      pinchAnchorT=state.viewT0+frac0*(state.viewT1-state.viewT0);
+      panV0=state.viewT0;panV1=state.viewT1; // larghezza di riferimento per lo zoom
       e.preventDefault();
     }else if(e.touches.length===1){
       pinchDist0=null;
@@ -2396,10 +2397,10 @@ function initHRChart(s){
       const ratio=dist(e.touches)/pinchDist0;
       const fullWidth=state.t1-state.t0;
       const minWidth=Math.max(20000,fullWidth*0.02); // non zoomma oltre ~20s
-      let newWidth=Math.max(minWidth,Math.min(fullWidth,(pinchV1-pinchV0)/ratio));
-      // il punto sotto il centro attuale delle due dita resta l'ancora dello zoom
-      const frac0=midXFrac(e.touches,rect);
-      let nv0=(pinchV0+pinchV1)/2 - frac0*newWidth;
+      let newWidth=Math.max(minWidth,Math.min(fullWidth,(panV1-panV0)/ratio));
+      // il timestamp ancorato resta sotto il centro ATTUALE delle dita: zoom e pan coerenti, nessun salto
+      const fracNow=midXFrac(e.touches,rect);
+      let nv0=pinchAnchorT-fracNow*newWidth;
       let nv1=nv0+newWidth;
       if(nv0<state.t0){nv0=state.t0;nv1=nv0+newWidth;}
       if(nv1>state.t1){nv1=state.t1;nv0=nv1-newWidth;}
@@ -2490,8 +2491,8 @@ function showDayHistory(y,m,d,el){
       <div class="hname" style="margin-bottom:8px">${esc(s.nomeScheda)} <span style="font-size:12px;color:var(--text3);font-weight:600">— ${ts}</span>${hrHead}</div>
       ${s.esercizi.map(e=>{
         const delta=hrExDelta(e),avg=hrExAvg(e),rec=hrExRecovery(e);
-        const isPeak=hrExIsRealPeak(e);
-        const hrInfo=(delta!=null)?`<span style="font-size:10px;color:var(--text3);font-family:'Lucida Console',monospace">${isPeak?e.hr.min:e.hr.max}→${isPeak?e.hr.max:e.hr.min}bpm${isPeak?'':' (defaticante)'}${avg!=null?' · avg '+avg:''}${rec!=null?' · rec '+rec:''}</span>`:'';
+        const calming=hrExIsCalming(e);
+        const hrInfo=(delta!=null)?`<span style="font-size:10px;color:var(--text3);font-family:'Lucida Console',monospace">${e.hr.pre}→${calming?e.hr.end:(e.hr.max||e.hr.end)}bpm${avg!=null?' · avg '+avg:''}${rec!=null?' · rec '+rec:''}</span>`:'';
         return `
         <div class="hex${e.skipped?' skipped':''}">
           <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
