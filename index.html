@@ -130,9 +130,9 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .exlist-status.st-cur{color:var(--orange)}
 .pb{height:4px;background:var(--bg3);flex-shrink:0}
 .pf{height:100%;background:var(--accent);transition:width .4s}
-.hrRow{display:flex;justify-content:flex-end;padding:8px 18px 0;flex-shrink:0}
-.hrToggle{display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text3);font-size:13px;font-weight:700}
-.hrToggle .ti-heart{font-size:16px;transition:color .2s}
+.sbWrap{position:relative;flex:1;display:flex;overflow:hidden}
+.hrToggle{position:absolute;top:18px;right:22px;display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text3);font-size:12px;font-weight:700;letter-spacing:1px;z-index:5}
+.hrToggle .ti-heart{font-size:14px;transition:color .2s}
 .hrToggle.hr-on{color:var(--text)}
 .hrToggle.hr-on .ti-heart{color:#ff4757}
 .sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:18px 22px;overflow-y:auto;text-align:center}
@@ -287,7 +287,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 <div id="appRoot" style="display:none">
 
 <div class="topbar">
-  <div class="logo">Cali<span>Mat</span><span style="font-size:10px;font-weight:600;color:var(--text3);margin-left:7px;letter-spacing:0;vertical-align:middle;opacity:.7">v1.7</span></div>
+  <div class="logo">Cali<span>Mat</span></div>
   <div style="display:flex;gap:9px;align-items:center">
     <div class="user-pill" id="userPill" onclick="openSettings()">
       <div class="sync-dot" id="syncDot"></div>
@@ -490,8 +490,10 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <button class="btn bd" style="font-size:13px;padding:9px 13px;flex-shrink:0" onclick="endSessConfirm()"><i class="ti ti-x"></i> Termina</button>
   </div>
   <div class="pb"><div class="pf" id="pf" style="width:0%"></div></div>
-  <div class="hrRow"><div class="hrToggle" id="hrToggle" onclick="toggleHRConnect()" title="Collega fascia cardio"><i class="ti ti-heart" id="hrIcon"></i><span id="hrBpm"></span></div></div>
-  <div class="sb" id="sb"></div>
+  <div class="sbWrap">
+    <div class="hrToggle" id="hrToggle" onclick="toggleHRConnect()" title="Collega fascia cardio"><span id="hrBpm"></span><i class="ti ti-heart" id="hrIcon"></i></div>
+    <div class="sb" id="sb"></div>
+  </div>
 </div>
 
 <!-- LISTA ESERCIZI SESSIONE -->
