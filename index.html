@@ -481,6 +481,11 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
       <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)" id="shScheda"></div>
       <div class="shprog-toggle" id="shProg" onclick="openExList()"></div>
     </div>
+    <div id="hrBadge" onclick="toggleHRConnect()" style="display:none;flex-shrink:0;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;line-height:1.1">
+      <div style="font-size:18px;font-weight:800;color:var(--text)"><i class="ti ti-heart" id="hrIcon" style="font-size:14px;color:#ff4757"></i> <span id="hrBpm">--</span></div>
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">bpm</div>
+    </div>
+    <button class="btn bg" id="btnHR" style="font-size:13px;padding:9px 13px;flex-shrink:0" onclick="toggleHRConnect()" title="Collega fascia cardio"><i class="ti ti-heart-rate-monitor"></i></button>
     <button class="btn bg" id="btnPip" style="font-size:13px;padding:9px 13px;flex-shrink:0;display:none" onclick="togglePiP()" title="Picture-in-Picture"><i class="ti ti-picture-in-picture"></i></button>
     <button class="btn bd" style="font-size:13px;padding:9px 13px;flex-shrink:0" onclick="endSessConfirm()"><i class="ti ti-x"></i> Termina</button>
   </div>
@@ -814,6 +819,68 @@ function testBeep(){bS();setTimeout(()=>bL(),400);}
 let _wl=null;
 const reqWL=async()=>{try{if('wakeLock' in navigator)_wl=await navigator.wakeLock.request('screen');}catch(e){}};
 const relWL=()=>{if(_wl){_wl.release();_wl=null;}};
+
+// ─── HEART RATE (BLE) ────────────────────────────────
+// Standard GATT Heart Rate Service (0x180D) / Measurement Characteristic (0x2A37).
+// Connessione manuale (tasto), non blocca mai la sessione se assente/persa.
+let _hrDevice=null, _hrChar=null, _hrCurrent=null;
+
+function hrParseBpm(dv){
+  // primo byte = flags; bit0=0 → bpm su UINT8, bit0=1 → UINT16
+  const flags=dv.getUint8(0);
+  return (flags & 0x1) ? dv.getUint16(1,true) : dv.getUint8(1);
+}
+
+function hrOnNotify(ev){
+  const bpm=hrParseBpm(ev.target.value);
+  _hrCurrent=bpm;
+  const el=document.getElementById('hrBpm');
+  if(el)el.textContent=bpm;
+  const icon=document.getElementById('hrIcon');
+  if(icon){icon.classList.remove('ti-heart');icon.classList.add('ti-heart-filled');}
+}
+
+async function toggleHRConnect(){
+  if(_hrDevice && _hrDevice.gatt.connected){
+    hrDisconnect();
+    return;
+  }
+  if(!navigator.bluetooth){
+    alert2('Bluetooth non supportato su questo browser/dispositivo.');
+    return;
+  }
+  try{
+    _hrDevice=await navigator.bluetooth.requestDevice({
+      filters:[{services:['heart_rate']}]
+    });
+    _hrDevice.addEventListener('gattserverdisconnected',hrOnDisconnected);
+    const server=await _hrDevice.gatt.connect();
+    const service=await server.getPrimaryService('heart_rate');
+    _hrChar=await service.getCharacteristic('heart_rate_measurement');
+    await _hrChar.startNotifications();
+    _hrChar.addEventListener('characteristicvaluechanged',hrOnNotify);
+    document.getElementById('hrBadge').style.display='flex';
+    document.getElementById('btnHR').classList.add('bg-active');
+    document.getElementById('btnHR').innerHTML='<i class="ti ti-heart-rate-monitor" style="color:#ff4757"></i>';
+  }catch(e){
+    // utente ha annullato il picker, o device non compatibile: non bloccare nulla
+    console.warn('HR connect fallita:',e);
+  }
+}
+
+function hrOnDisconnected(){
+  _hrChar=null;_hrCurrent=null;
+  document.getElementById('hrBadge').style.display='none';
+  document.getElementById('btnHR').innerHTML='<i class="ti ti-heart-rate-monitor"></i>';
+}
+
+function hrDisconnect(){
+  try{
+    if(_hrDevice && _hrDevice.gatt.connected)_hrDevice.gatt.disconnect();
+  }catch(e){}
+  hrOnDisconnected();
+  _hrDevice=null;
+}
 
 // ─── PICTURE-IN-PICTURE ──────────────────────────────
 let _pipWin = null;
@@ -1904,6 +1971,7 @@ function pauseSessionForLater(){
   saveSessionSnapshot();
   clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
   if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
+  hrDisconnect();
   document.getElementById('sessOv').classList.remove('open');
   alert2('Allenamento in pausa. Riaprendo CaliMat ti verrà chiesto se riprenderlo.');
 }
@@ -1927,6 +1995,7 @@ function closeSess(){
   clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
   clearSessionSnapshot();
   if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
+  hrDisconnect();
   document.getElementById('sessOv').classList.remove('open');
 }
 
