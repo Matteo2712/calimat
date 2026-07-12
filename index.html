@@ -840,6 +840,33 @@ function hrOnNotify(ev){
   _hrCurrent=bpm;
   const el=document.getElementById('hrBpm');
   if(el)el.textContent=bpm+' BPM';
+  hrFeedSample(bpm);
+}
+
+function hrFeedSample(bpm){
+  if(!S.scheda || !S.done || !S.done[S.exIdx])return; // nessuna sessione attiva
+  const now=Date.now();
+  // campioni per il grafico: throttlati a 1 ogni 2s (2h di sessione ≈ 3600 punti)
+  if(!S._hrLastSampleT || now-S._hrLastSampleT>=2000){
+    S._hrLastSampleT=now;
+    S.hrSamples.push({t:now,bpm,exIdx:S.exIdx});
+  }
+  // aggregati per esercizio corrente: sempre, non throttlati
+  const d=S.done[S.exIdx];
+  if(d && d.hr){
+    if(bpm>d.hr.max)d.hr.max=bpm;
+    d.hr.sum+=bpm;d.hr.count++;
+  }
+}
+
+function hrCaptureRestEnd(){
+  // chiude la coppia inizio/fine riposo per calcolare il recovery rate
+  if(S._hrRestStartBpm!=null && _hrCurrent!=null && S.done && S.done[S.exIdx]){
+    const d=S.done[S.exIdx];
+    d.hr.recoverySum+=(S._hrRestStartBpm-_hrCurrent);
+    d.hr.recoveryCount++;
+  }
+  S._hrRestStartBpm=null;
 }
 
 function hrSetToggleUI(connected){
@@ -1546,8 +1573,10 @@ function startSession(id){
     serie_target:e.serie,reps_target:e.reps,
     kg:e.kg,pausa:e.pausa,
     nota:e.nota||'',
-    serie_fatte:0,done:null,skipped:false
+    serie_fatte:0,done:null,skipped:false,
+    hr:{pre:null,max:0,sum:0,count:0,recoverySum:0,recoveryCount:0}
   }));
+  S.hrSamples=[];S._hrLastSampleT=0;S._hrRestStartBpm=null;
   reqWL();
   document.getElementById('sessOv').classList.add('open');
   initPiPButton();
@@ -1674,6 +1703,9 @@ function setPhase(ph){
       ${skipExBtn}`;
     runTimer(S.tL,()=>goExercise(),null,S.tT);
   } else if(ph==='EXERCISE'){
+    if(S.serIdx===0 && S.done[S.exIdx] && S.done[S.exIdx].hr.pre===null && _hrCurrent!=null){
+      S.done[S.exIdx].hr.pre=_hrCurrent;
+    }
     if(ex.tipo==='dinamico'){
       sb.innerHTML=`${exHead}${serLbl}
         <div class="rdis"><div class="rnum">${ex.reps}</div><div class="rlbl">reps</div></div>
@@ -1704,6 +1736,7 @@ function setPhase(ph){
       runTimer(ex.reps,()=>serieDone(),'hold');
     }
   } else if(ph==='REST'){
+    S._hrRestStartBpm=_hrCurrent;
     sb.innerHTML=`${exHead}${serLbl}${tRingHTML(ex.pausa,ex.pausa,'sec')}
       <div class="acbtn-row">
         ${hasHist()?`<button class="acbtn abback" onclick="goBackStep()"><i class="ti ti-player-skip-back-filled"></i></button>`:''}
@@ -1907,12 +1940,14 @@ function emomCycleDone(){
 }
 function skipRest(){if(S.tL>4){S.tL=4;setTDisp(S.tL,S.tT);}}
 function nextSerie(){
+  hrCaptureRestEnd();
   S.serIdx++;setPhase('EXERCISE');
   const ex=S.scheda.esercizi[S.exIdx];
   if(ex.tipo==='statico')runTimer(ex.reps,()=>serieDone(),'hold');
   else if(ex.tipo==='emom')runTimer(ex.reps,()=>emomCycleDone(),'hold');
 }
 function terminateFromRest(){
+  hrCaptureRestEnd();
   pushHist();
   S._earlyExitLabel='terminato';
   setPhase('CONFIRM');
@@ -1987,6 +2022,12 @@ function saveSession(nota){
     nota:String(nota||'').trim(),
     esercizi:S.done.map(d=>({...d}))
   };
+  if(S.hrSamples && S.hrSamples.length){
+    const bpms=S.hrSamples.map(s=>s.bpm);
+    sessObj.hr_avg=Math.round(bpms.reduce((a,b)=>a+b,0)/bpms.length);
+    sessObj.hr_max=Math.max(...bpms);
+    sessObj.hrSamples=S.hrSamples;
+  }
   h.unshift(sessObj);
   ss(HK,h);closeM('mNota');clearSessionSnapshot();closeSess();
   saveSessionToDB(sessObj);
@@ -2195,6 +2236,61 @@ function deleteSession(){
 }
 
 // ─── STATS ───────────────────────────────────────────
+const HR_PALETTE=['#ff6b6b','#4ecdc4','#ffd93d','#6c5ce7','#00b894','#e17055','#0984e3','#fd79a8','#fdcb6e','#00cec9'];
+function hrExDelta(e){ if(!e.hr || e.hr.pre==null || !e.hr.max) return null; return e.hr.max-e.hr.pre; }
+function hrExAvg(e){ if(!e.hr || !e.hr.count) return null; return Math.round(e.hr.sum/e.hr.count); }
+function hrExRecovery(e){ if(!e.hr || !e.hr.recoveryCount) return null; return Math.round(e.hr.recoverySum/e.hr.recoveryCount); }
+
+function hrChartSVG(s){
+  const samples=s.hrSamples;
+  if(!samples || samples.length<2) return '';
+  const bpms=samples.map(x=>x.bpm);
+  const minB=Math.min(...bpms)-5, maxB=Math.max(...bpms)+5;
+  const W=300,H=110,PAD=4;
+  const xs=i=>PAD+(i/(samples.length-1))*(W-PAD*2);
+  const ys=b=>H-PAD-((b-minB)/(maxB-minB))*(H-PAD*2);
+  // trova i punti dove cambia l'esercizio (segmenti contigui)
+  const boundaries=[0];
+  for(let i=1;i<samples.length;i++){ if(samples[i].exIdx!==samples[i-1].exIdx) boundaries.push(i); }
+  boundaries.push(samples.length);
+  let paths='';
+  for(let k=0;k<boundaries.length-1;k++){
+    const start=boundaries[k], end=boundaries[k+1];
+    const from=k===0?start:start-1; // include il punto precedente per continuità della linea
+    const exIdx=samples[start].exIdx;
+    const color=HR_PALETTE[exIdx%HR_PALETTE.length];
+    let d='';
+    for(let i=from;i<end;i++) d+=(i===from?'M':'L')+xs(i).toFixed(1)+','+ys(samples[i].bpm).toFixed(1)+' ';
+    paths+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  // legenda: esercizi unici nell'ordine di comparsa
+  const seen=new Set();const legend=[];
+  samples.forEach(pt=>{
+    if(!seen.has(pt.exIdx)){
+      seen.add(pt.exIdx);
+      const nome=s.esercizi[pt.exIdx]?s.esercizi[pt.exIdx].nome:'?';
+      legend.push({exIdx:pt.exIdx,nome});
+    }
+  });
+  const legendHTML=legend.map(l=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);margin-right:8px"><span style="width:8px;height:8px;border-radius:50%;background:${HR_PALETTE[l.exIdx%HR_PALETTE.length]};display:inline-block"></span>${esc(l.nome)}</span>`).join('');
+  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;font-weight:700">Andamento battito</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:90px;display:block">${paths}</svg>
+    <div style="margin-top:6px;line-height:1.8">${legendHTML}</div>
+  </div>`;
+}
+
+function hrRankingHTML(s){
+  const rows=(s.esercizi||[]).map(e=>({nome:e.nome,delta:hrExDelta(e)})).filter(r=>r.delta!=null);
+  if(!rows.length) return '';
+  rows.sort((a,b)=>b.delta-a.delta);
+  const top=rows.slice(0,3);
+  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;font-weight:700">Sforzo maggiore</div>
+    ${top.map((r,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${i+1}. ${esc(r.nome)}</span><span style="font-family:'Lucida Console',monospace;color:var(--red)">+${r.delta} bpm</span></div>`).join('')}
+  </div>`;
+}
+
 function renderStats(){
   const el=document.getElementById('statsEl');const h=getFilteredStorico();const now=new Date();
   const m=now.getMonth(),y=now.getFullYear();
@@ -2242,16 +2338,23 @@ function showDayHistory(y,m,d,el){
   }
   box.innerHTML=`<div class="stitle">${ds}</div>`+sessions.map(s=>{
     const ts=new Date(s.data).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    const hrHead=(s.hr_avg!=null)?`<span style="font-size:12px;color:var(--text3);font-weight:600;margin-left:6px"><i class="ti ti-heart" style="color:#ff4757;font-size:12px"></i> media ${s.hr_avg} · max ${s.hr_max}</span>`:'';
     return `<div class="card">
-      <div class="hname" style="margin-bottom:8px">${esc(s.nomeScheda)} <span style="font-size:12px;color:var(--text3);font-weight:600">— ${ts}</span></div>
-      ${s.esercizi.map(e=>`
+      <div class="hname" style="margin-bottom:8px">${esc(s.nomeScheda)} <span style="font-size:12px;color:var(--text3);font-weight:600">— ${ts}</span>${hrHead}</div>
+      ${s.esercizi.map(e=>{
+        const delta=hrExDelta(e),avg=hrExAvg(e),rec=hrExRecovery(e);
+        const hrInfo=(delta!=null)?`<span style="font-size:10px;color:var(--text3);font-family:'Lucida Console',monospace">${e.hr.pre}→${e.hr.max}bpm${avg!=null?' · avg '+avg:''}${rec!=null?' · rec '+rec:''}</span>`:'';
+        return `
         <div class="hex${e.skipped?' skipped':''}">
           <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
           <span style="display:flex;align-items:center;gap:7px">
             <span style="font-family:'Lucida Console',monospace;font-size:12px">${exFatteHTML(e)}</span>
             ${e.skipped?'<i class="ti ti-minus" style="color:var(--red);font-size:16px"></i>':e.done===true?'<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>':e.done===false?'<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>':''}
           </span>
-        </div>`).join('')}
+        </div>${hrInfo?`<div style="text-align:right;margin-top:-4px;margin-bottom:4px">${hrInfo}</div>`:''}`;
+      }).join('')}
+      ${hrRankingHTML(s)}
+      ${hrChartSVG(s)}
     </div>`;
   }).join('');
 }
