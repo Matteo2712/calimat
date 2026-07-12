@@ -130,7 +130,12 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .exlist-status.st-cur{color:var(--orange)}
 .pb{height:4px;background:var(--bg3);flex-shrink:0}
 .pf{height:100%;background:var(--accent);transition:width .4s}
-.sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 22px;overflow-y:auto;text-align:center}
+.hrRow{display:flex;justify-content:flex-end;padding:8px 18px 0;flex-shrink:0}
+.hrToggle{display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text3);font-size:13px;font-weight:700}
+.hrToggle .ti-heart{font-size:16px;transition:color .2s}
+.hrToggle.hr-on{color:var(--text)}
+.hrToggle.hr-on .ti-heart{color:#ff4757}
+.sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:18px 22px;overflow-y:auto;text-align:center}
 .sphase{font-size:12px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;width:100%;text-align:left;align-self:flex-start}
 .sexname{font-size:28px;font-weight:700;line-height:1.18;margin-bottom:8px;color:var(--text);width:100%;text-align:left;align-self:flex-start;box-sizing:border-box}
 .snote{font-size:14px;color:var(--text);margin-bottom:8px;font-weight:600;line-height:1.4;padding:8px 12px;background:rgba(255,170,0,.1);border-radius:8px;border:1px solid rgba(255,170,0,.25);width:100%;text-align:left;align-self:flex-start;box-sizing:border-box}
@@ -481,15 +486,11 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
       <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)" id="shScheda"></div>
       <div class="shprog-toggle" id="shProg" onclick="openExList()"></div>
     </div>
-    <div id="hrBadge" onclick="toggleHRConnect()" style="display:none;flex-shrink:0;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;line-height:1.1">
-      <div style="font-size:18px;font-weight:800;color:var(--text)"><i class="ti ti-heart" id="hrIcon" style="font-size:14px;color:#ff4757"></i> <span id="hrBpm">--</span></div>
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">bpm</div>
-    </div>
-    <button class="btn bg" id="btnHR" style="font-size:13px;padding:9px 13px;flex-shrink:0" onclick="toggleHRConnect()" title="Collega fascia cardio"><i class="ti ti-heart-rate-monitor"></i></button>
     <button class="btn bg" id="btnPip" style="font-size:13px;padding:9px 13px;flex-shrink:0;display:none" onclick="togglePiP()" title="Picture-in-Picture"><i class="ti ti-picture-in-picture"></i></button>
     <button class="btn bd" style="font-size:13px;padding:9px 13px;flex-shrink:0" onclick="endSessConfirm()"><i class="ti ti-x"></i> Termina</button>
   </div>
   <div class="pb"><div class="pf" id="pf" style="width:0%"></div></div>
+  <div class="hrRow"><div class="hrToggle" id="hrToggle" onclick="toggleHRConnect()" title="Collega fascia cardio"><i class="ti ti-heart" id="hrIcon"></i><span id="hrBpm"></span></div></div>
   <div class="sb" id="sb"></div>
 </div>
 
@@ -823,6 +824,7 @@ const relWL=()=>{if(_wl){_wl.release();_wl=null;}};
 // ─── HEART RATE (BLE) ────────────────────────────────
 // Standard GATT Heart Rate Service (0x180D) / Measurement Characteristic (0x2A37).
 // Connessione manuale (tasto), non blocca mai la sessione se assente/persa.
+const HRDK='cm_hr_device_id';
 let _hrDevice=null, _hrChar=null, _hrCurrent=null;
 
 function hrParseBpm(dv){
@@ -835,9 +837,45 @@ function hrOnNotify(ev){
   const bpm=hrParseBpm(ev.target.value);
   _hrCurrent=bpm;
   const el=document.getElementById('hrBpm');
-  if(el)el.textContent=bpm;
-  const icon=document.getElementById('hrIcon');
-  if(icon){icon.classList.remove('ti-heart');icon.classList.add('ti-heart-filled');}
+  if(el)el.textContent=bpm+' BPM';
+}
+
+function hrSetToggleUI(connected){
+  const t=document.getElementById('hrToggle');
+  const bpmEl=document.getElementById('hrBpm');
+  if(!t)return;
+  t.classList.toggle('hr-on',connected);
+  if(bpmEl)bpmEl.textContent=connected?'-- BPM':'';
+}
+
+async function hrTryAutoReconnect(){
+  // Se il browser supporta i permessi persistenti BLE (getDevices), prova a
+  // riconnettersi in automatico al device usato l'ultima volta, senza popup.
+  if(!navigator.bluetooth || !navigator.bluetooth.getDevices)return false;
+  const savedId=localStorage.getItem(HRDK);
+  if(!savedId)return false;
+  try{
+    const known=await navigator.bluetooth.getDevices();
+    const dev=known.find(d=>d.id===savedId);
+    if(!dev)return false;
+    await hrConnectToDevice(dev);
+    return true;
+  }catch(e){
+    console.warn('HR auto-reconnect fallita:',e);
+    return false;
+  }
+}
+
+async function hrConnectToDevice(device){
+  _hrDevice=device;
+  _hrDevice.addEventListener('gattserverdisconnected',hrOnDisconnected);
+  const server=await _hrDevice.gatt.connect();
+  const service=await server.getPrimaryService('heart_rate');
+  _hrChar=await service.getCharacteristic('heart_rate_measurement');
+  await _hrChar.startNotifications();
+  _hrChar.addEventListener('characteristicvaluechanged',hrOnNotify);
+  localStorage.setItem(HRDK,_hrDevice.id);
+  hrSetToggleUI(true);
 }
 
 async function toggleHRConnect(){
@@ -849,19 +887,15 @@ async function toggleHRConnect(){
     alert2('Bluetooth non supportato su questo browser/dispositivo.');
     return;
   }
+  // 1. prova riconnessione automatica silenziosa al device già autorizzato
+  const auto=await hrTryAutoReconnect();
+  if(auto)return;
+  // 2. altrimenti scan/picker classico (prima volta, o device non trovato)
   try{
-    _hrDevice=await navigator.bluetooth.requestDevice({
+    const device=await navigator.bluetooth.requestDevice({
       filters:[{services:['heart_rate']}]
     });
-    _hrDevice.addEventListener('gattserverdisconnected',hrOnDisconnected);
-    const server=await _hrDevice.gatt.connect();
-    const service=await server.getPrimaryService('heart_rate');
-    _hrChar=await service.getCharacteristic('heart_rate_measurement');
-    await _hrChar.startNotifications();
-    _hrChar.addEventListener('characteristicvaluechanged',hrOnNotify);
-    document.getElementById('hrBadge').style.display='flex';
-    document.getElementById('btnHR').classList.add('bg-active');
-    document.getElementById('btnHR').innerHTML='<i class="ti ti-heart-rate-monitor" style="color:#ff4757"></i>';
+    await hrConnectToDevice(device);
   }catch(e){
     // utente ha annullato il picker, o device non compatibile: non bloccare nulla
     console.warn('HR connect fallita:',e);
@@ -870,8 +904,7 @@ async function toggleHRConnect(){
 
 function hrOnDisconnected(){
   _hrChar=null;_hrCurrent=null;
-  document.getElementById('hrBadge').style.display='none';
-  document.getElementById('btnHR').innerHTML='<i class="ti ti-heart-rate-monitor"></i>';
+  hrSetToggleUI(false);
 }
 
 function hrDisconnect(){
@@ -1516,6 +1549,7 @@ function startSession(id){
   reqWL();
   document.getElementById('sessOv').classList.add('open');
   initPiPButton();
+  hrSetToggleUI(false);
   _hist=[];
   setPhase('READY');
   saveSessionSnapshot();
