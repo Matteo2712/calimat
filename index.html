@@ -859,7 +859,8 @@ function hrFeedSample(bpm){
   // aggregati per esercizio corrente: sempre, non throttlati
   const d=S.done[S.exIdx];
   if(d && d.hr){
-    if(bpm>d.hr.max)d.hr.max=bpm;
+    if(bpm>d.hr.max){d.hr.max=bpm;d.hr.maxT=now;}
+    if(bpm<d.hr.min){d.hr.min=bpm;d.hr.minT=now;}
     d.hr.sum+=bpm;d.hr.count++;
   }
 }
@@ -1598,7 +1599,7 @@ function startSession(id){
     kg:e.kg,pausa:e.pausa,
     nota:e.nota||'',
     serie_fatte:0,done:null,skipped:false,
-    hr:{pre:null,end:null,max:0,sum:0,count:0,recoverySum:0,recoveryCount:0}
+    hr:{pre:null,end:null,max:0,maxT:null,min:Infinity,minT:null,sum:0,count:0,recoverySum:0,recoveryCount:0}
   }));
   S.hrSamples=[];S._hrLastSampleT=0;S._hrRestStartBpm=null;
   reqWL();
@@ -2265,15 +2266,13 @@ function deleteSession(){
 // ─── STATS ───────────────────────────────────────────
 const HR_PALETTE=['#ff6b6b','#4ecdc4','#ffd93d','#6c5ce7','#00b894','#e17055','#0984e3','#fd79a8','#fdcb6e','#00cec9'];
 function hrExDelta(e){
-  if(!e.hr || e.hr.pre==null) return null;
-  // se il picco è stato superato DURANTE l'esercizio (non solo all'inizio), è sforzo reale
-  if(e.hr.max>e.hr.pre) return e.hr.max-e.hr.pre;
-  // altrimenti il battito non è mai salito oltre il valore di partenza: probabile esercizio
-  // defaticante (es. dopo uno sforzo intenso, il battito parte alto e scende) → uso l'andamento reale
-  if(e.hr.end!=null) return e.hr.end-e.hr.pre;
-  return null;
+  if(!e.hr || e.hr.min===Infinity || !e.hr.count) return null;
+  // se il massimo è arrivato dopo il minimo, il battito è salito durante l'esercizio: sforzo reale
+  if(e.hr.maxT>=e.hr.minT) return e.hr.max-e.hr.min;
+  // altrimenti il minimo è arrivato dopo il massimo: il battito è sceso durante l'esercizio (defaticante)
+  return e.hr.min-e.hr.max;
 }
-function hrExIsRealPeak(e){ return e.hr && e.hr.pre!=null && e.hr.max>e.hr.pre; }
+function hrExIsRealPeak(e){ return e.hr && e.hr.min!==Infinity && e.hr.maxT>=e.hr.minT; }
 function hrExAvg(e){ if(!e.hr || !e.hr.count) return null; return Math.round(e.hr.sum/e.hr.count); }
 function hrExRecovery(e){ if(!e.hr || !e.hr.recoveryCount) return null; return Math.round(e.hr.recoverySum/e.hr.recoveryCount); }
 
@@ -2282,10 +2281,7 @@ const _hrCharts={}; // stato per-sessione dei grafici aperti (per pinch-zoom)
 function hrCanvasHTML(s){
   if(!s.hrSamples || s.hrSamples.length<2) return '';
   return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:700">Andamento battito <span style="text-transform:none;letter-spacing:0">(pizzica per zoomare)</span></div>
-      <div id="hrZoomReset_${s.id}" onclick="hrResetZoom('${s.id}')" style="font-size:10px;color:var(--accent);font-weight:700;cursor:pointer;display:none">Reset zoom</div>
-    </div>
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:700;margin-bottom:6px">Andamento battito</div>
     <div style="touch-action:none"><canvas id="hrCanvas_${s.id}" style="width:100%;height:120px;display:block"></canvas></div>
     <div id="hrLegend_${s.id}" style="margin-top:6px;line-height:1.8"></div>
   </div>`;
@@ -2365,13 +2361,6 @@ function renderHRLegend(s){
     +`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:rgba(140,140,140,.55);display:inline-block"></span>pausa</span>`;
 }
 
-function hrResetZoom(id){
-  const state=_hrCharts[id];if(!state)return;
-  state.viewT0=state.t0;state.viewT1=state.t1;
-  drawHRChart(state);
-  const btn=document.getElementById('hrZoomReset_'+id);if(btn)btn.style.display='none';
-}
-
 function initHRChart(s){
   const canvas=document.getElementById('hrCanvas_'+s.id);
   if(!canvas)return;
@@ -2382,36 +2371,60 @@ function initHRChart(s){
   hrSetupCanvasDPR(canvas);
   drawHRChart(state);
   renderHRLegend(s);
-  let pinchDist0=null,pinchV0=null,pinchV1=null,pinchAnchorT=null;
+  let pinchDist0=null,pinchV0=null,pinchV1=null;
+  let panX0=null,panV0=null,panV1=null;
   const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  const midXFrac=(t,rect)=>((t[0].clientX+t[1].clientX)/2-rect.left)/rect.width;
+
   canvas.addEventListener('touchstart',e=>{
     if(e.touches.length===2){
+      panX0=null;
       pinchDist0=dist(e.touches);
       pinchV0=state.viewT0;pinchV1=state.viewT1;
-      const rect=canvas.getBoundingClientRect();
-      const midX=(e.touches[0].clientX+e.touches[1].clientX)/2-rect.left;
-      pinchAnchorT=state.viewT0+(midX/rect.width)*(state.viewT1-state.viewT0);
+      e.preventDefault();
+    }else if(e.touches.length===1){
+      pinchDist0=null;
+      panX0=e.touches[0].clientX;panV0=state.viewT0;panV1=state.viewT1;
       e.preventDefault();
     }
   },{passive:false});
+
   canvas.addEventListener('touchmove',e=>{
+    const rect=canvas.getBoundingClientRect();
     if(e.touches.length===2 && pinchDist0){
       e.preventDefault();
       const ratio=dist(e.touches)/pinchDist0;
       const fullWidth=state.t1-state.t0;
       const minWidth=Math.max(20000,fullWidth*0.02); // non zoomma oltre ~20s
       let newWidth=Math.max(minWidth,Math.min(fullWidth,(pinchV1-pinchV0)/ratio));
-      const frac=(pinchAnchorT-pinchV0)/(pinchV1-pinchV0);
-      let nv0=pinchAnchorT-frac*newWidth,nv1=nv0+newWidth;
+      // il punto sotto il centro attuale delle due dita resta l'ancora dello zoom
+      const frac0=midXFrac(e.touches,rect);
+      let nv0=(pinchV0+pinchV1)/2 - frac0*newWidth;
+      let nv1=nv0+newWidth;
       if(nv0<state.t0){nv0=state.t0;nv1=nv0+newWidth;}
       if(nv1>state.t1){nv1=state.t1;nv0=nv1-newWidth;}
       state.viewT0=nv0;state.viewT1=nv1;
       drawHRChart(state);
-      const btn=document.getElementById('hrZoomReset_'+s.id);
-      if(btn)btn.style.display=(newWidth<fullWidth*0.98)?'block':'none';
+    }else if(e.touches.length===1 && panX0!=null){
+      e.preventDefault();
+      const dx=e.touches[0].clientX-panX0;
+      const width=panV1-panV0;
+      let nv0=panV0-(dx/rect.width)*width,nv1=nv0+width;
+      if(nv0<state.t0){nv0=state.t0;nv1=nv0+width;}
+      if(nv1>state.t1){nv1=state.t1;nv0=nv1-width;}
+      state.viewT0=nv0;state.viewT1=nv1;
+      drawHRChart(state);
     }
   },{passive:false});
-  canvas.addEventListener('touchend',e=>{if(e.touches.length<2)pinchDist0=null;});
+
+  canvas.addEventListener('touchend',e=>{
+    if(e.touches.length===0){pinchDist0=null;panX0=null;}
+    else if(e.touches.length===1){
+      // da due dita a una: continua come pan senza salti, riferimento aggiornato ad ora
+      pinchDist0=null;
+      panX0=e.touches[0].clientX;panV0=state.viewT0;panV1=state.viewT1;
+    }
+  });
 }
 
 function hrRankingHTML(s){
@@ -2421,7 +2434,7 @@ function hrRankingHTML(s){
   const top=rows.slice(0,3);
   return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;font-weight:700">Sforzo maggiore</div>
-    ${top.map((r,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${i+1}. ${esc(r.nome)}</span><span style="font-family:'Lucida Console',monospace;color:${r.delta>=0?'var(--red)':'var(--text3)'}">${r.delta>=0?'+':''}${r.delta} bpm</span></div>`).join('')}
+    ${top.map((r,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${i+1}. ${esc(r.nome)}</span><span style="font-family:'Lucida Console',monospace">${r.delta>=0?'+':''}${r.delta} bpm</span></div>`).join('')}
   </div>`;
 }
 
@@ -2478,7 +2491,7 @@ function showDayHistory(y,m,d,el){
       ${s.esercizi.map(e=>{
         const delta=hrExDelta(e),avg=hrExAvg(e),rec=hrExRecovery(e);
         const isPeak=hrExIsRealPeak(e);
-        const hrInfo=(delta!=null)?`<span style="font-size:10px;color:var(--text3);font-family:'Lucida Console',monospace">${e.hr.pre}→${isPeak?e.hr.max:e.hr.end}bpm${isPeak?'':' (defaticante)'}${avg!=null?' · avg '+avg:''}${rec!=null?' · rec '+rec:''}</span>`:'';
+        const hrInfo=(delta!=null)?`<span style="font-size:10px;color:var(--text3);font-family:'Lucida Console',monospace">${isPeak?e.hr.min:e.hr.max}→${isPeak?e.hr.max:e.hr.min}bpm${isPeak?'':' (defaticante)'}${avg!=null?' · avg '+avg:''}${rec!=null?' · rec '+rec:''}</span>`:'';
         return `
         <div class="hex${e.skipped?' skipped':''}">
           <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
