@@ -430,6 +430,10 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="stitle">Condividi schede</div>
     <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px">
       <button class="btn bg bw" onclick="exportAllSchedeCSV()"><i class="ti ti-file-spreadsheet"></i> Esporta tutte le schede (CSV)</button>
+      <label class="btn bg bw" style="cursor:pointer">
+        <i class="ti ti-file-import"></i> Importa scheda da CSV
+        <input type="file" accept=".csv" style="display:none" onchange="importSchedaCSV(this)">
+      </label>
     </div>
     <div class="stitle">Pericoloso</div>
     <button class="btn bd bw" onclick="resetAll()"><i class="ti ti-alert-triangle"></i> Cancella tutti i dati</button>
@@ -2554,6 +2558,83 @@ function exportAllSchedeCSV(){
   schede.forEach(s=>s.esercizi.forEach(e=>rows.push([s.nome,...exRowCSV(e)])));
   const csv=[header,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
   shareOrDownloadFile('CaliMat_schede_'+new Date().toISOString().slice(0,10)+'.csv','text/csv',csv);
+}
+// ─── IMPORT CSV SCHEDE (stesso formato dell'esporta) ────
+function parseCSVText(text){
+  text=String(text).replace(/^\uFEFF/,'');
+  const rows=[];let row=[];let field='';let inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; }
+      else field+=c;
+    } else {
+      if(c==='"') inQ=true;
+      else if(c===','){row.push(field);field='';}
+      else if(c==='\r'){ /* ignora, gestito da \n */ }
+      else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}
+      else field+=c;
+    }
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows.filter(r=>!(r.length===1&&r[0].trim()===''));
+}
+function parseEsercizioRowCSV(nome,serieStr,repsStr,kgStr,pausaStr){
+  nome=(nome||'').trim();
+  const serie=parseInt(serieStr)||3;
+  repsStr=(repsStr||'').trim();
+  let tipo='dinamico',reps;
+  if(/\(emom\)\s*$/i.test(repsStr)){ tipo='emom'; reps=parseFloat(repsStr)||55; }
+  else if(/s\s*$/i.test(repsStr)){ tipo='statico'; reps=parseFloat(repsStr)||30; }
+  else { reps=parseFloat(repsStr)||10; }
+  let kg=null;
+  if(kgStr&&kgStr.trim()!==''){ const n=parseFloat(kgStr.replace(',','.')); if(!isNaN(n)) kg=n; }
+  let pausa=60;
+  if(pausaStr&&pausaStr.trim()!==''){ const n=parseInt(pausaStr); if(!isNaN(n)) pausa=n; }
+  return {id:uid(),nome,tipo,serie,reps,kg,pausa,nota:''};
+}
+function importSchedaCSV(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const rows=parseCSVText(e.target.result);
+      if(rows.length<2)return alert2('CSV vuoto o non valido.');
+      const header=rows[0].map(h=>String(h||'').trim().toLowerCase());
+      const hasScheda=header[0]==='scheda';
+      const base=hasScheda?1:0;
+      const defaultName=f.name.replace(/\.csv$/i,'').replace(/^calimat_/i,'').replace(/_/g,' ').trim()||'Scheda importata';
+      const groups={};const order=[];
+      rows.slice(1).forEach(row=>{
+        if(!row||!row.length)return;
+        const schedaName=hasScheda?(row[0]||'').trim()||defaultName:defaultName;
+        const nome=(row[base]||'').trim();
+        if(!nome)return;
+        const ex=parseEsercizioRowCSV(nome,row[base+1],row[base+2],row[base+3],row[base+4]);
+        if(!groups[schedaName]){groups[schedaName]=[];order.push(schedaName);}
+        groups[schedaName].push(ex);
+      });
+      if(!order.length)return alert2('Nessun esercizio valido trovato nel CSV.');
+      if(order.length===1){
+        const nome=order[0];
+        _eid=null;_exTemp=groups[nome];_schedaGruppiTemp=[];
+        document.getElementById('schedaNome').value=nome;
+        document.getElementById('mSchedaTit').textContent='Importa scheda';
+        renderExList();renderSchedaGrpButton();
+        closeM('mSettings');openM('mScheda');
+      } else {
+        const totEx=order.reduce((a,n)=>a+groups[n].length,0);
+        confirm2('Importa schede','Importare '+order.length+' schede ('+totEx+' esercizi totali)?',()=>{
+          const schede=ls(SK);const created=[];
+          order.forEach(n=>{const obj={id:uid(),nome:n,esercizi:groups[n],gruppi:[]};schede.push(obj);created.push(obj);});
+          ss(SK,schede);closeM('mSettings');renderSchede();
+          created.forEach(o=>saveSchedaToDB(o));
+          showUndo(order.length+' schede importate!','',null);
+        });
+      }
+    }catch(er){console.error('importSchedaCSV',er);alert2('Errore nella lettura del file CSV.');}
+  };
+  r.readAsText(f);inp.value='';
 }
 function importData(inp){
   const f=inp.files[0];if(!f)return;
