@@ -239,6 +239,13 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 /* VOLUME SLIDER */
 .vol-row{display:flex;align-items:center;gap:12px;margin-top:10px}
 .vol-slider{flex:1;accent-color:var(--accent)}
+/* REP CLEAN OVERLAY (non bloccante, sopra il timer di riposo/EMOM già in corso) */
+.repclean-ov{position:absolute;top:14px;left:14px;right:14px;z-index:60;display:flex;justify-content:center;animation:repcleanIn .18s ease-out}
+@keyframes repcleanIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.repclean-box{background:var(--bg2);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:280px;width:100%}
+.repclean-title{font-size:12px;font-weight:700;color:var(--text2);white-space:nowrap}
+.repclean-box input{width:60px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-weight:700;text-align:center;padding:7px 0;font-family:'Lucida Console',monospace}
+.repclean-box button{background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
 /* PiP WINDOW */
 #pipContent{background:#000;color:#fff;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:12px;text-align:center;gap:6px}
 #pipContent .pip-phase{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888}
@@ -359,6 +366,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="mt">Sessione completata!</div>
     <p style="font-size:15px;color:var(--text2);margin-bottom:14px">Nota opzionale per la sessione:</p>
     <textarea class="ta" id="sessNota" placeholder="es. energia alta, caldo..."></textarea>
+    <button class="btn bg bw" style="margin-top:10px" onclick="exportSforzoCSV()"><i class="ti ti-heartbeat"></i> Esporta log sforzo (CSV)</button>
     <div class="mac">
       <button class="btn bg" style="flex:1" onclick="saveSession('')">Salta</button>
       <button class="btn ba" style="flex:2" onclick="saveSession(document.getElementById('sessNota').value)">Salva</button>
@@ -866,6 +874,14 @@ function hrFeedSample(bpm){
     if(bpm>d.hr.max)d.hr.max=bpm;
     d.hr.sum+=bpm;d.hr.count++;
   }
+}
+
+// Campionamento indipendente a 1Hz per il log sforzo (a prescindere dal throttle di hrFeedSample
+// usato per il grafico). Gira per tutta la sessione, anche in pausa/riposo. bpm:null = segnale perso.
+function hrLogTick(){
+  if(!S.scheda)return;
+  const stale=!_hrLastNotifyTs || (Date.now()-_hrLastNotifyTs>HR_STALE_MS);
+  S.hrLog.push({t:Date.now(), bpm:(!stale && _hrCurrent!=null)?_hrCurrent:null});
 }
 
 function hrCaptureRestEnd(){
@@ -1572,6 +1588,7 @@ let S={
   timer:null,tL:0,tT:0,paused:false,
   done:[],chronTimer:null,chronSec:0,
   startTime:null,
+  hrLog:[],setLog:[],_hrLogTimer:null,_setStartTs:null,_lastSetEndTs:null,_pendingRepEntry:null,
   _noteCallback:null
 };
 
@@ -1605,6 +1622,8 @@ function startSession(id){
     hr:{pre:null,end:null,max:0,sum:0,count:0,recoverySum:0,recoveryCount:0}
   }));
   S.hrSamples=[];S._hrLastSampleT=0;S._hrRestStartBpm=null;
+  S.hrLog=[];S.setLog=[];S._setStartTs=null;S._lastSetEndTs=null;S._pendingRepEntry=null;
+  clearInterval(S._hrLogTimer);S._hrLogTimer=setInterval(hrLogTick,1000);
   reqWL();
   document.getElementById('sessOv').classList.add('open');
   initPiPButton();
@@ -1950,29 +1969,75 @@ function backBtnHTML(){
 
 function doStart(){pushHist();S.tL=20;S.tT=20;setPhase('COUNTDOWN');}
 function skipReady(){pushHist();S.tL=4;S.tT=20;setPhase('COUNTDOWN');}
-function goExercise(){pushHist();clearInterval(S.timer);setPhase('EXERCISE');}
+function goExercise(){pushHist();clearInterval(S.timer);S._setStartTs=Date.now();setPhase('EXERCISE');}
+function logSetCompletion(ex){
+  const tsFine=Date.now();
+  const tsInizio=S._setStartTs||tsFine;
+  const durata=+((tsFine-tsInizio)/1000).toFixed(2);
+  const recupero=S._lastSetEndTs?+((tsInizio-S._lastSetEndTs)/1000).toFixed(2):0;
+  const entry={
+    esercizio:ex.nome,
+    tipo:ex.tipo==='statico'?'statico':'dinamico', // EMOM registrato come "dinamico" su richiesta
+    set_numero:S.serIdx+1,
+    ts_inizio:tsInizio, ts_fine:tsFine, durata_sec:durata,
+    rep_totali:ex.tipo==='dinamico'?ex.reps:(ex.tipo==='emom'?ex.reps:null),
+    rep_pulite:null,
+    tempo_isometria:ex.tipo==='statico'?durata:null,
+    tempo_recupero_pre_set:recupero,
+    note:[]
+  };
+  S.setLog.push(entry);
+  S._lastSetEndTs=tsFine;
+  S._setStartTs=null;
+  return entry;
+}
+function showRepCleanOverlay(entry,targetReps){
+  document.getElementById('repCleanOv')?.remove();
+  const ov=document.createElement('div');
+  ov.className='repclean-ov';ov.id='repCleanOv';
+  ov.innerHTML=`<div class="repclean-box">
+    <div class="repclean-title">Reps pulite?</div>
+    <input type="number" min="0" id="repCleanInput" value="${targetReps}">
+    <button onclick="confirmRepClean()">OK</button>
+  </div>`;
+  document.getElementById('sessOv').appendChild(ov);
+  S._pendingRepEntry=entry;
+  setTimeout(()=>document.getElementById('repCleanInput')?.focus(),50);
+}
+function confirmRepClean(){
+  const inp=document.getElementById('repCleanInput');
+  const v=parseInt(inp?.value);
+  if(S._pendingRepEntry) S._pendingRepEntry.rep_pulite=isNaN(v)?null:v;
+  document.getElementById('repCleanOv')?.remove();
+  S._pendingRepEntry=null;
+}
 function serieDone(){
   pushHist();
-  clearInterval(S.timer);S.done[S.exIdx].serie_fatte++;
+  clearInterval(S.timer);
   const ex=S.scheda.esercizi[S.exIdx];
+  const entry=logSetCompletion(ex);
+  S.done[S.exIdx].serie_fatte++;
+  if(ex.tipo==='dinamico') showRepCleanOverlay(entry,ex.reps);
   if((S.serIdx+1)>=ex.serie){S._earlyExitLabel=null;setPhase('CONFIRM');}else{setPhase('REST');}
 }
 function emomCycleDone(){
   pushHist();
   clearInterval(S.timer);
   const ex=S.scheda.esercizi[S.exIdx];
+  logSetCompletion(ex);
   S.done[S.exIdx].serie_fatte++;
   if((S.serIdx+1)>=ex.serie){
     S._earlyExitLabel=null;setPhase('CONFIRM');
   } else {
     S.serIdx++;
+    S._setStartTs=Date.now();
     setPhase('EXERCISE'); // ricomincia subito il prossimo ciclo, niente pausa
   }
 }
 function skipRest(){if(S.tL>4){S.tL=4;setTDisp(S.tL,S.tT);}}
 function nextSerie(){
   hrCaptureRestEnd();
-  S.serIdx++;setPhase('EXERCISE');
+  S.serIdx++;S._setStartTs=Date.now();setPhase('EXERCISE');
   const ex=S.scheda.esercizi[S.exIdx];
   if(ex.tipo==='statico')runTimer(ex.reps,()=>serieDone(),'hold');
   else if(ex.tipo==='emom')runTimer(ex.reps,()=>emomCycleDone(),'hold');
@@ -2042,6 +2107,98 @@ function finishSession(){
   S.endTime=new Date().toISOString();
   document.getElementById('sessNota').value='';openM('mNota');
 }
+// ─── LOG SFORZO NEUROMUSCOLARE (CSV, solo in memoria, generato a fine sessione) ────
+function sforzoCsvEsc(v){
+  v=String(v??'');
+  if(/[",;\r\n]/.test(v)) v='"'+v.replace(/"/g,'""')+'"';
+  return v;
+}
+function buildSforzoRows(){
+  const log=S.hrLog||[];
+  const hrDeviceUsed=log.some(p=>p.bpm!=null);
+  function bpmNear(ts){
+    if(!log.length)return null;
+    let best=null,bestDiff=Infinity;
+    for(const p of log){
+      const d=Math.abs(p.t-ts);
+      if(d<bestDiff){bestDiff=d;best=p;}
+      if(p.t>ts+2000)break;
+    }
+    return (best && bestDiff<=1500 && best.bpm!=null)?best.bpm:null;
+  }
+  function sliceWindow(t0,t1){return log.filter(p=>p.t>=t0&&p.t<=t1);}
+  function interpolate(points){
+    const filled=points.map(p=>({...p}));
+    let hadGap=false,i=0;
+    while(i<filled.length){
+      if(filled[i].bpm==null){
+        let j=i;while(j<filled.length && filled[j].bpm==null)j++;
+        const gapLen=j-i;
+        const prev=i>0?filled[i-1]:null, next=j<filled.length?filled[j]:null;
+        if(gapLen>3)hadGap=true;
+        if(prev&&next){for(let k=i;k<j;k++){const frac=(k-i+1)/(gapLen+1);filled[k].bpm=Math.round(prev.bpm+(next.bpm-prev.bpm)*frac);}}
+        else if(prev){for(let k=i;k<j;k++)filled[k].bpm=prev.bpm;}
+        else if(next){for(let k=i;k<j;k++)filled[k].bpm=next.bpm;}
+        i=j;
+      } else i++;
+    }
+    return {points:filled,hadGap};
+  }
+  const rows=[];
+  (S.setLog||[]).forEach((entry,idx)=>{
+    const notes=[...entry.note];
+    const rawWin=sliceWindow(entry.ts_inizio,entry.ts_fine);
+    const {points:winFilled,hadGap}=hrDeviceUsed?interpolate(rawWin):{points:rawWin,hadGap:false};
+    if(hrDeviceUsed && hadGap)notes.push('hr_interpolato');
+    const bpms=winFilled.map(p=>p.bpm).filter(b=>b!=null);
+    const hr_peak=bpms.length?Math.max(...bpms):null;
+    const hr_min=bpms.length?Math.min(...bpms):null;
+    const hr_media=bpms.length?+(bpms.reduce((a,b)=>a+b,0)/bpms.length).toFixed(1):null;
+    const array_bpm=JSON.stringify(winFilled.map(p=>p.bpm));
+    const array_ts=JSON.stringify(winFilled.map(p=>p.t));
+    let hr_baseline=null;
+    if(hrDeviceUsed){
+      const baseWin=sliceWindow(entry.ts_inizio-30000,entry.ts_inizio-1000);
+      const baseBpms=baseWin.map(p=>p.bpm).filter(b=>b!=null);
+      if(baseBpms.length){
+        hr_baseline=Math.round(baseBpms.reduce((a,b)=>a+b,0)/baseBpms.length);
+        if(baseWin.length<15)notes.push('baseline_parziale');
+      } else notes.push('baseline_parziale');
+    }
+    const nextEntry=S.setLog[idx+1];
+    const limitTs=nextEntry?nextEntry.ts_inizio:(S.endTime?new Date(S.endTime).getTime():(log.length?log[log.length-1].t:entry.ts_fine));
+    const recDisponibileSec=Math.max(0,Math.round((limitTs-entry.ts_fine)/1000));
+    function hrAt(offsetSec){
+      if(!hrDeviceUsed)return null;
+      const target=entry.ts_fine+offsetSec*1000;
+      if(target>limitTs){
+        if(recDisponibileSec<60 && !notes.some(n=>n.startsWith('rec_parziale')))notes.push('rec_parziale_'+recDisponibileSec+'s');
+        return bpmNear(limitTs);
+      }
+      return bpmNear(target);
+    }
+    rows.push([
+      'SET', entry.ts_inizio, entry.ts_fine, entry.durata_sec.toFixed(2),
+      entry.esercizio, entry.tipo, entry.set_numero,
+      entry.rep_totali!=null?entry.rep_totali:'', entry.rep_pulite!=null?entry.rep_pulite:'',
+      entry.tempo_isometria!=null?entry.tempo_isometria.toFixed(2):'',
+      hr_baseline!=null?hr_baseline:'', hr_peak!=null?hr_peak:'', hr_media!=null?hr_media:'', hr_min!=null?hr_min:'',
+      array_bpm, array_ts,
+      hrAt(30)??'', hrAt(60)??'', hrAt(90)??'', hrAt(120)??'',
+      entry.tempo_recupero_pre_set.toFixed(2),
+      notes.join(' ')
+    ]);
+  });
+  return rows;
+}
+function exportSforzoCSV(){
+  if(!S.setLog || !S.setLog.length){alert2('Nessun set registrato in questa sessione.');return;}
+  const header=['tipo_evento','timestamp_inizio','timestamp_fine','durata_sec','esercizio','tipo','set_numero','rep_totali','rep_pulite','tempo_isometria','hr_baseline_pre30','hr_peak','hr_media','hr_min','array_bpm','array_timestamps','hr_30s','hr_60s','hr_90s','hr_120s','tempo_recupero_pre_set','note'];
+  const rows=buildSforzoRows();
+  const csv=[header,...rows].map(r=>r.map(sforzoCsvEsc).join(';')).join('\r\n');
+  const nomeScheda=S.scheda?S.scheda.nome.replace(/[^a-z0-9]+/gi,'_'):'sessione';
+  shareOrDownloadFile('CaliMat_sforzo_'+nomeScheda+'_'+new Date().toISOString().slice(0,10)+'.csv','text/csv',csv);
+}
 function saveSession(nota){
   const h=ls(HK);
   const sessObj={
@@ -2100,7 +2257,7 @@ function endSessionSavePartial(){
 }
 
 function closeSess(){
-  clearInterval(S.timer);clearInterval(S.chronTimer);relWL();
+  clearInterval(S.timer);clearInterval(S.chronTimer);clearInterval(S._hrLogTimer);relWL();
   clearSessionSnapshot();
   if(_pipWin){_pipWin.close();_pipWin=null;clearInterval(_pipInterval);}
   hrDisconnect();
