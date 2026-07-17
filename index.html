@@ -2530,7 +2530,7 @@ function csvEsc(v){
 function exRowCSV(e){
   const repsCol=e.tipo==='emom'?e.reps+'s (EMOM)':(e.tipo==='statico'?e.reps+'s':e.reps);
   const pausaCol=e.tipo==='emom'?'':(e.pausa||'');
-  return [e.nome, e.serie, repsCol, e.kg||'', pausaCol];
+  return [e.nome, e.serie, repsCol, e.kg||'', pausaCol, e.nota||''];
 }
 async function shareOrDownloadFile(filename,mime,content){
   const blob=new Blob(['\uFEFF'+content],{type:mime});
@@ -2545,7 +2545,7 @@ async function shareOrDownloadFile(filename,mime,content){
 }
 function exportSchedaCSV(id){
   const s=ls(SK).find(x=>x.id===id);if(!s)return;
-  const header=['Esercizio','Serie','Reps/Secondi','Zavorra (kg)','Pausa (s)'];
+  const header=['Esercizio','Serie','Reps/Secondi','Zavorra (kg)','Pausa (s)','Nota'];
   const rows=s.esercizi.map(exRowCSV);
   const csv=[header,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
   shareOrDownloadFile('CaliMat_'+s.nome.replace(/[^a-z0-9]+/gi,'_')+'.csv','text/csv',csv);
@@ -2553,7 +2553,7 @@ function exportSchedaCSV(id){
 function exportAllSchedeCSV(){
   const schede=ls(SK);
   if(!schede.length){alert2('Nessuna scheda da esportare.');return;}
-  const header=['Scheda','Esercizio','Serie','Reps/Secondi','Zavorra (kg)','Pausa (s)'];
+  const header=['Scheda','Esercizio','Serie','Reps/Secondi','Zavorra (kg)','Pausa (s)','Nota'];
   const rows=[];
   schede.forEach(s=>s.esercizi.forEach(e=>rows.push([s.nome,...exRowCSV(e)])));
   const csv=[header,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
@@ -2579,7 +2579,7 @@ function parseCSVText(text){
   if(field.length||row.length){row.push(field);rows.push(row);}
   return rows.filter(r=>!(r.length===1&&r[0].trim()===''));
 }
-function parseEsercizioRowCSV(nome,serieStr,repsStr,kgStr,pausaStr){
+function parseEsercizioRowCSV(nome,serieStr,repsStr,kgStr,pausaStr,notaStr){
   nome=(nome||'').trim();
   const serie=parseInt(serieStr)||3;
   repsStr=(repsStr||'').trim();
@@ -2591,7 +2591,8 @@ function parseEsercizioRowCSV(nome,serieStr,repsStr,kgStr,pausaStr){
   if(kgStr&&kgStr.trim()!==''){ const n=parseFloat(kgStr.replace(',','.')); if(!isNaN(n)) kg=n; }
   let pausa=60;
   if(pausaStr&&pausaStr.trim()!==''){ const n=parseInt(pausaStr); if(!isNaN(n)) pausa=n; }
-  return {id:uid(),nome,tipo,serie,reps,kg,pausa,nota:''};
+  const nota=(notaStr||'').trim();
+  return {id:uid(),nome,tipo,serie,reps,kg,pausa,nota};
 }
 function importSchedaCSV(inp){
   const f=inp.files[0];if(!f)return;
@@ -2610,7 +2611,7 @@ function importSchedaCSV(inp){
         const schedaName=hasScheda?(row[0]||'').trim()||defaultName:defaultName;
         const nome=(row[base]||'').trim();
         if(!nome)return;
-        const ex=parseEsercizioRowCSV(nome,row[base+1],row[base+2],row[base+3],row[base+4]);
+        const ex=parseEsercizioRowCSV(nome,row[base+1],row[base+2],row[base+3],row[base+4],row[base+5]);
         if(!groups[schedaName]){groups[schedaName]=[];order.push(schedaName);}
         groups[schedaName].push(ex);
       });
