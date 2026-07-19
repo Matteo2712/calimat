@@ -239,6 +239,12 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 /* VOLUME SLIDER */
 .vol-row{display:flex;align-items:center;gap:12px;margin-top:10px}
 .vol-slider{flex:1;accent-color:var(--accent)}
+/* FEATURE TOGGLES (impostazioni: funzioni opzionali) */
+.feat-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.feat-row:last-child{border-bottom:none}
+.feat-txt{font-size:14px;color:var(--text2);font-weight:600;line-height:1.3}
+.feat-sub{font-size:12px;color:var(--text3);font-weight:400;margin-top:2px}
+.feat-row input[type=checkbox]{width:40px;height:24px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
 /* REP CLEAN OVERLAY (non bloccante, sopra il timer di riposo/EMOM già in corso) */
 .repclean-ov{position:absolute;top:14px;left:14px;right:14px;z-index:60;display:flex;justify-content:center;animation:repcleanIn .18s ease-out}
 @keyframes repcleanIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
@@ -366,7 +372,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="mt">Sessione completata!</div>
     <p style="font-size:15px;color:var(--text2);margin-bottom:14px">Nota opzionale per la sessione:</p>
     <textarea class="ta" id="sessNota" placeholder="es. energia alta, caldo..."></textarea>
-    <button class="btn bg bw" style="margin-top:10px" onclick="exportSforzoCSV()"><i class="ti ti-heartbeat"></i> Esporta log sforzo (CSV)</button>
+    <button class="btn bg bw" id="btnExportSforzo" style="margin-top:10px" onclick="exportSforzoCSV()"><i class="ti ti-heartbeat"></i> Esporta log sforzo (CSV)</button>
     <div class="mac">
       <button class="btn bg" style="flex:1" onclick="saveSession('')">Salta</button>
       <button class="btn ba" style="flex:2" onclick="saveSession(document.getElementById('sessNota').value)">Salva</button>
@@ -443,6 +449,9 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
         <input type="file" accept=".csv" style="display:none" onchange="importSchedaCSV(this)">
       </label>
     </div>
+    <div class="stitle">Funzionalità</div>
+    <p style="font-size:12px;color:var(--text3);margin:-4px 0 6px">Disattiva quello che non usi per un'app più semplice.</p>
+    <div id="featTogglesList" style="margin-bottom:16px"></div>
     <div class="stitle">Pericoloso</div>
     <button class="btn bd bw" onclick="resetAll()"><i class="ti ti-alert-triangle"></i> Cancella tutti i dati</button>
     <div class="mac"><button class="btn bg bw" onclick="closeM('mSettings')">Chiudi</button></div>
@@ -533,11 +542,48 @@ const DB = createClient(SUPABASE_URL, SUPABASE_KEY);
 let _currentUser = null;
 
 // ─── STORAGE KEYS (locali, usati come cache offline) ──────────
-const SK='cm_schede', HK='cm_storico', GK='cm_gruppi', SESSK='cm_active_session';
+const SK='cm_schede', HK='cm_storico', GK='cm_gruppi', SESSK='cm_active_session', PREFK='cm_feat_prefs';
 const ls = s => JSON.parse(localStorage.getItem(s)||'[]');
 const ss = (s,d) => localStorage.setItem(s, JSON.stringify(d));
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ─── PREFERENZE FUNZIONALITÀ (impostazioni: attiva/disattiva funzioni opzionali) ────
+const DEFAULT_PREFS={
+  hr:true,          // cardiofrequenzimetro (icona/collegamento BLE)
+  repClean:true,    // richiesta "reps pulite" a fine set dinamico
+  noteEdit:true,    // riquadro modifica nota esercizio a fine esercizio
+  nextTimeEdit:true,// riquadro "imposta per la prossima volta" a fine esercizio
+  chronEdit:true,   // riquadro "modifica rapida" prima del prossimo esercizio
+  exportCsv:true    // possibilità di esportare il log sforzo CSV a fine sessione
+};
+function getPrefs(){
+  try{ return {...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(PREFK)||'{}')}; }
+  catch(e){ return {...DEFAULT_PREFS}; }
+}
+function getPref(k){ return getPrefs()[k]; }
+function setPref(k,val){
+  const p=getPrefs(); p[k]=val;
+  localStorage.setItem(PREFK, JSON.stringify(p));
+}
+const FEAT_LIST=[
+  {k:'hr', label:'Cardiofrequenzimetro', sub:'Icona per collegare la fascia cardio durante la sessione'},
+  {k:'repClean', label:'Reps pulite', sub:'Chiedi quante reps pulite a fine set (esercizi dinamici); se disattivo, conta sempre tutte le reps come fatte'},
+  {k:'noteEdit', label:'Modifica nota esercizio', sub:'Riquadro per aggiornare la nota a fine esercizio'},
+  {k:'nextTimeEdit', label:'Imposta per la prossima volta', sub:'Riquadro per modificare serie/reps/kg/pausa a fine esercizio'},
+  {k:'chronEdit', label:'Modifica rapida pre-esercizio', sub:'Riquadro per modificare il prossimo esercizio prima di iniziarlo'},
+  {k:'exportCsv', label:'Esporta log sforzo CSV', sub:'Possibilità di scaricare il log per l\'Indice di Sforzo Neuromuscolare a fine sessione'}
+];
+function renderFeatToggles(){
+  const box=document.getElementById('featTogglesList');
+  if(!box)return;
+  const p=getPrefs();
+  box.innerHTML=FEAT_LIST.map(f=>`
+    <div class="feat-row">
+      <div class="feat-txt">${f.label}<div class="feat-sub">${f.sub}</div></div>
+      <input type="checkbox" ${p[f.k]?'checked':''} onchange="setPref('${f.k}',this.checked);applyFeatVisibility()">
+    </div>`).join('');
+}
 
 // ─── SYNC STATE ────────────────────────────────────
 function setSyncDot(state){ // 'ok' | 'syncing' | 'error'
@@ -1215,7 +1261,7 @@ function renderEHGrpButton(){
   if(nameEl) nameEl.textContent=_eHGruppiTemp.length?grpFilterLabel(_eHGruppiTemp):'Nessun gruppo';
 }
 
-function openSettings(){renderGruppiMgmt();openM('mSettings');}
+function openSettings(){renderGruppiMgmt();renderFeatToggles();openM('mSettings');}
 let _editingGruppoId=null;
 function renderGruppiMgmt(){
   const el=document.getElementById('gruppiMgmtList');if(!el)return;
@@ -1543,10 +1589,13 @@ function resumeSession(snap, elapsedSec){
   S.done=snap.done; S.startTime=snap.startTime; S.paused=false;
   S.chronSec=snap.chronSec||0;
   _hist=[];
+  S.hrLog=[];S.setLog=[];S._setStartTs=null;S._lastSetEndTs=null;S._pendingRepEntry=null;
+  clearInterval(S._hrLogTimer);S._hrLogTimer=setInterval(hrLogTick,1000);
 
   reqWL();
   document.getElementById('sessOv').classList.add('open');
   initPiPButton();
+  applyFeatVisibility();
 
   // Se eravamo in un timer a conto alla rovescia, sottrai il tempo passato
   if((snap.phase==='COUNTDOWN'||snap.phase==='EXERCISE'||snap.phase==='REST') && snap.tL>0){
@@ -1628,6 +1677,7 @@ function startSession(id){
   document.getElementById('sessOv').classList.add('open');
   initPiPButton();
   hrSetToggleUI(false);
+  applyFeatVisibility();
   _hist=[];
   setPhase('READY');
   saveSessionSnapshot();
@@ -1805,7 +1855,7 @@ function setPhase(ph){
         <button class="acbtn abstart acbtn-main" onclick="stopChron()"><i class="ti ti-arrow-right"></i></button>
       </div>
       ${nx?skipExBtn:''}
-      ${nx?`<div class="quick-edit-box collapsed" id="quickEditBox">
+      ${nx&&getPref('chronEdit')?`<div class="quick-edit-box collapsed" id="quickEditBox">
         <div class="quick-edit-title" onclick="toggleQuickEdit('quickEditBox')">Modifica rapida</div>
         <div class="quick-edit-body">
         <div class="quick-edit-row">
@@ -1829,17 +1879,23 @@ function setPhase(ph){
     }
     _confirmEnterTS=Date.now();
     const earlyLbl=S._earlyExitLabel;
+    const pNote=getPref('noteEdit'), pNextTime=getPref('nextTimeEdit');
+    if(!pNote && !pNextTime){
+      // Nessuna delle due schermate di revisione è attiva: passa subito all'esercizio successivo.
+      confirmDoneWithNote(earlyLbl?false:true);
+      return;
+    }
     sb.innerHTML=`
       <div class="sexname">${esc(ex.nome)}</div>
       <div class="qe-current-settings">${esc(exInfoLine(ex))}</div>
       <div style="margin:14px 0 10px;text-align:center">
         <div style="font-size:24px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px">esercizio ${earlyLbl||'completato'}</div>
       </div>
-      <div class="note-update-box">
+      ${pNote?`<div class="note-update-box">
         <div class="note-update-label">Aggiorna nota esercizio</div>
         <textarea class="ta" id="noteUpdateTA" style="min-height:44px;font-size:14px" placeholder="Nota per la prossima volta...">${esc(ex.nota||'')}</textarea>
-      </div>
-      <div class="quick-edit-box collapsed" id="confirmEditBox">
+      </div>`:''}
+      ${pNextTime?`<div class="quick-edit-box collapsed" id="confirmEditBox">
         <div class="quick-edit-title" onclick="toggleQuickEdit('confirmEditBox')">Imposta per la prossima volta</div>
         <div class="quick-edit-body">
         <div class="quick-edit-row">
@@ -1850,7 +1906,7 @@ function setPhase(ph){
         </div>
         <button class="acbtn abquicksave" onclick="saveConfirmEdit()">Salva modifiche esercizio</button>
         </div>
-      </div>
+      </div>`:''}
       ${earlyLbl?
         `<div class="cdbx"><button class="cdyes" style="width:100%" onclick="confirmDoneWithNote(false)"><i class="ti ti-check"></i> Conferma e continua</button></div>`
         :
@@ -1864,6 +1920,10 @@ function setPhase(ph){
       }
       ${hasHist()?`<div class="acbtn-row"><button class="acbtn abback abback-solo" onclick="goBackStep()"><i class="ti ti-player-skip-back-filled"></i></button></div>`:''}`;
   }
+}
+function applyFeatVisibility(){
+  const hrEl=document.getElementById('hrToggle');
+  if(hrEl) hrEl.style.display=getPref('hr')?'':'none';
 }
 function toggleQuickEdit(boxId){
   const box=document.getElementById(boxId);
@@ -2017,7 +2077,10 @@ function serieDone(){
   const ex=S.scheda.esercizi[S.exIdx];
   const entry=logSetCompletion(ex);
   S.done[S.exIdx].serie_fatte++;
-  if(ex.tipo==='dinamico') showRepCleanOverlay(entry,ex.reps);
+  if(ex.tipo==='dinamico'){
+    if(getPref('repClean')) showRepCleanOverlay(entry,ex.reps);
+    else entry.rep_pulite=ex.reps;
+  }
   if((S.serIdx+1)>=ex.serie){S._earlyExitLabel=null;setPhase('CONFIRM');}else{setPhase('REST');}
 }
 function emomCycleDone(){
@@ -2105,7 +2168,9 @@ function stopChron(){pushHist();clearInterval(S.chronTimer);setPhase('READY');}
 function finishSession(){
   clearInterval(S.timer);clearInterval(S.chronTimer);
   S.endTime=new Date().toISOString();
-  document.getElementById('sessNota').value='';openM('mNota');
+  document.getElementById('sessNota').value='';
+  const be=document.getElementById('btnExportSforzo');if(be)be.style.display=getPref('exportCsv')?'':'none';
+  openM('mNota');
 }
 // ─── LOG SFORZO NEUROMUSCOLARE (CSV, solo in memoria, generato a fine sessione) ────
 function sforzoCsvEsc(v){
@@ -2253,7 +2318,9 @@ function endSessionSavePartial(){
     }
   });
   S.endTime=new Date().toISOString();
-  document.getElementById('sessNota').value='';openM('mNota');
+  document.getElementById('sessNota').value='';
+  const be=document.getElementById('btnExportSforzo');if(be)be.style.display=getPref('exportCsv')?'':'none';
+  openM('mNota');
 }
 
 function closeSess(){
