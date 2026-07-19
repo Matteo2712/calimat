@@ -2011,7 +2011,8 @@ function togPause(){S.paused=!S.paused;const pb=document.getElementById('bpause'
 function pushHist(){
   _hist.push({
     exIdx:S.exIdx, serIdx:S.serIdx, phase:S.phase,
-    done:JSON.parse(JSON.stringify(S.done)), chronSec:S.chronSec
+    done:JSON.parse(JSON.stringify(S.done)), chronSec:S.chronSec,
+    setLogLen:S.setLog?S.setLog.length:0, _setStartTs:S._setStartTs, _lastSetEndTs:S._lastSetEndTs
   });
   if(_hist.length>20) _hist.shift(); // limite di sicurezza
 }
@@ -2019,7 +2020,11 @@ function goBackStep(){
   const prev=_hist.pop();
   if(!prev) return;
   S.exIdx=prev.exIdx; S.serIdx=prev.serIdx; S.done=prev.done; S.chronSec=prev.chronSec;
+  if(S.setLog) S.setLog.length=prev.setLogLen; // rimuove eventuali set registrati dopo questo punto
+  S._setStartTs=prev._setStartTs; S._lastSetEndTs=prev._lastSetEndTs;
   clearInterval(S.timer);clearInterval(S.chronTimer);
+  document.getElementById('repCleanOv')?.remove();
+  S._pendingRepEntry=null;
   setPhase(prev.phase);
 }
 function hasHist(){ return _hist.length>0; }
