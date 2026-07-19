@@ -372,7 +372,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="mt">Sessione completata!</div>
     <p style="font-size:15px;color:var(--text2);margin-bottom:14px">Nota opzionale per la sessione:</p>
     <textarea class="ta" id="sessNota" placeholder="es. energia alta, caldo..."></textarea>
-    <button class="btn bg bw" id="btnExportSforzo" style="margin-top:10px" onclick="exportSforzoCSV()"><i class="ti ti-heartbeat"></i> Esporta log sforzo (CSV)</button>
+    <button class="btn bg bw" id="btnExportSforzo" style="margin-top:10px" onclick="exportSforzoCSV()"><i class="ti ti-heartbeat"></i> Esporta log (CSV)</button>
     <div class="mac">
       <button class="btn bg" style="flex:1" onclick="saveSession('')">Salta</button>
       <button class="btn ba" style="flex:2" onclick="saveSession(document.getElementById('sessNota').value)">Salva</button>
@@ -568,11 +568,11 @@ function setPref(k,val){
 }
 const FEAT_LIST=[
   {k:'hr', label:'Cardiofrequenzimetro', sub:'Icona per collegare la fascia cardio durante la sessione'},
-  {k:'repClean', label:'Reps pulite', sub:'Chiedi quante reps pulite a fine set (esercizi dinamici); se disattivo, conta sempre tutte le reps come fatte'},
+  {k:'chronEdit', label:'Modifica rapida pre-esercizio', sub:'Riquadro per modificare il prossimo esercizio prima di iniziarlo'},
   {k:'noteEdit', label:'Modifica nota esercizio', sub:'Riquadro per aggiornare la nota a fine esercizio'},
   {k:'nextTimeEdit', label:'Imposta per la prossima volta', sub:'Riquadro per modificare serie/reps/kg/pausa a fine esercizio'},
-  {k:'chronEdit', label:'Modifica rapida pre-esercizio', sub:'Riquadro per modificare il prossimo esercizio prima di iniziarlo'},
-  {k:'exportCsv', label:'Esporta log sforzo CSV', sub:'Possibilità di scaricare il log per l\'Indice di Sforzo Neuromuscolare a fine sessione'}
+  {k:'repClean', label:'Reps pulite', sub:'Chiedi quante reps pulite a fine set (esercizi dinamici); se disattivo, conta sempre tutte le reps come fatte'},
+  {k:'exportCsv', label:'Esporta log CSV', sub:'Possibilità di scaricare il log con i dati di sessione ed eventuale HR a fine sessione'}
 ];
 function renderFeatToggles(){
   const box=document.getElementById('featTogglesList');
