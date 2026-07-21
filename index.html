@@ -446,7 +446,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
       <button class="btn bg bw" onclick="exportAllSchedeCSV()"><i class="ti ti-file-spreadsheet"></i> Esporta tutte le schede (CSV)</button>
       <label class="btn bg bw" style="cursor:pointer">
         <i class="ti ti-file-import"></i> Importa scheda da CSV
-        <input type="file" accept=".csv" style="display:none" onchange="importSchedaCSV(this)">
+        <input type="file" accept=".csv,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel,text/plain" style="display:none" onchange="importSchedaCSV(this)">
       </label>
     </div>
     <div class="stitle">Funzionalità</div>
