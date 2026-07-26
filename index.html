@@ -131,8 +131,9 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .pb{height:4px;background:var(--bg3);flex-shrink:0}
 .pf{height:100%;background:var(--accent);transition:width .4s}
 .sbWrap{position:relative;flex:1;display:flex;overflow:hidden}
-.hrToggle{position:absolute;top:18px;right:22px;display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text3);font-size:12px;font-weight:700;letter-spacing:1px;z-index:5}
-.hrToggle .ti-heart{font-size:14px;transition:color .2s}
+.hrToggle{position:absolute;top:16px;right:22px;display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--text3);font-weight:700;letter-spacing:1px;z-index:5}
+#hrBpm{font-size:24px}
+.hrToggle .ti-heart{font-size:28px;transition:color .2s}
 .hrToggle.hr-on{color:var(--text)}
 .hrToggle.hr-on .ti-heart{color:#ff4757}
 .sb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:18px 22px;overflow-y:auto;text-align:center}
@@ -335,6 +336,10 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     <div class="stitle" style="margin-top:0">Esercizi — grip per riordinare</div>
     <div id="exList"></div>
     <button class="btn bg bw" style="margin-top:8px" onclick="addEx()"><i class="ti ti-plus"></i> Aggiungi esercizio</button>
+    <div class="ig" style="margin-top:16px">
+      <label class="il">Nota scheda</label>
+      <textarea class="ta" id="schedaNota" style="min-height:60px" placeholder="es. cosa portare, promemoria, varianti..."></textarea>
+    </div>
     <div class="mac">
       <button class="btn bg" style="flex:1" onclick="closeM('mScheda')">Annulla</button>
       <button class="btn ba" style="flex:2" onclick="saveScheda()">Salva scheda</button>
@@ -554,8 +559,7 @@ const DEFAULT_PREFS={
   repClean:true,    // richiesta "reps pulite" a fine set dinamico
   noteEdit:true,    // riquadro modifica nota esercizio a fine esercizio
   nextTimeEdit:true,// riquadro "imposta per la prossima volta" a fine esercizio
-  chronEdit:true,   // riquadro "modifica rapida" prima del prossimo esercizio
-  exportCsv:true    // possibilità di esportare il log sforzo CSV a fine sessione
+  chronEdit:true    // riquadro "modifica rapida" prima del prossimo esercizio
 };
 function getPrefs(){
   try{ return {...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(PREFK)||'{}')}; }
@@ -571,8 +575,7 @@ const FEAT_LIST=[
   {k:'chronEdit', label:'Modifica rapida pre-esercizio', sub:'Riquadro per modificare il prossimo esercizio prima di iniziarlo'},
   {k:'noteEdit', label:'Modifica nota esercizio', sub:'Riquadro per aggiornare la nota a fine esercizio'},
   {k:'nextTimeEdit', label:'Imposta per la prossima volta', sub:'Riquadro per modificare serie/reps/kg/pausa a fine esercizio'},
-  {k:'repClean', label:'Reps pulite', sub:'Chiedi quante reps pulite a fine set (esercizi dinamici); se disattivo, conta sempre tutte le reps come fatte'},
-  {k:'exportCsv', label:'Esporta log CSV', sub:'Possibilità di scaricare il log con i dati di sessione ed eventuale HR a fine sessione'}
+  {k:'repClean', label:'Reps pulite', sub:'Chiedi quante reps pulite a fine set (esercizi dinamici); se disattivo, conta sempre tutte le reps come fatte'}
 ];
 function renderFeatToggles(){
   const box=document.getElementById('featTogglesList');
@@ -1375,6 +1378,7 @@ function renderSchede(){
               </div>
               ${e.nota?`<div style="font-size:13px;color:#888;margin-top:3px;margin-left:10px;font-weight:500">${esc(e.nota)}</div>`:''}
             </div>`).join('')}
+          ${s.nota?`<div style="margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--radius);font-size:13px;color:var(--text2);white-space:pre-wrap">${esc(s.nota)}</div>`:''}
         </div>
       </div>
     </div>`).join('');
@@ -1397,12 +1401,13 @@ function askDelScheda(id){
     deleteSchedaFromDB(id);
   });
 }
-function openNewScheda(){_eid=null;_exTemp=[];_schedaGruppiTemp=[];document.getElementById('schedaNome').value='';document.getElementById('mSchedaTit').textContent='Nuova scheda';renderExList();renderSchedaGrpButton();openM('mScheda');}
+function openNewScheda(){_eid=null;_exTemp=[];_schedaGruppiTemp=[];document.getElementById('schedaNome').value='';document.getElementById('schedaNota').value='';document.getElementById('mSchedaTit').textContent='Nuova scheda';renderExList();renderSchedaGrpButton();openM('mScheda');}
 function openEditScheda(id){
   const s=ls(SK).find(x=>x.id===id);if(!s)return;
   _eid=id;_exTemp=JSON.parse(JSON.stringify(s.esercizi));
   _schedaGruppiTemp=Array.isArray(s.gruppi)?[...s.gruppi]:[];
   document.getElementById('schedaNome').value=s.nome;
+  document.getElementById('schedaNota').value=s.nota||'';
   document.getElementById('mSchedaTit').textContent='Modifica scheda';
   renderExList();renderSchedaGrpButton();openM('mScheda');
 }
@@ -1542,10 +1547,11 @@ function saveScheda(){
   const nome=document.getElementById('schedaNome').value.trim();
   if(!nome)return alert2('Inserisci un nome per la scheda');
   if(!_exTemp.length)return alert2('Aggiungi almeno un esercizio');
+  const nota=document.getElementById('schedaNota').value;
   const schede=ls(SK);
   let obj;
-  if(_eid){const idx=schede.findIndex(s=>s.id===_eid);schede[idx].nome=nome;schede[idx].esercizi=_exTemp;schede[idx].gruppi=_schedaGruppiTemp.slice();obj=schede[idx];}
-  else{obj={id:uid(),nome,esercizi:_exTemp,gruppi:_schedaGruppiTemp.slice()};schede.push(obj);}
+  if(_eid){const idx=schede.findIndex(s=>s.id===_eid);schede[idx].nome=nome;schede[idx].esercizi=_exTemp;schede[idx].gruppi=_schedaGruppiTemp.slice();schede[idx].nota=nota;obj=schede[idx];}
+  else{obj={id:uid(),nome,esercizi:_exTemp,gruppi:_schedaGruppiTemp.slice(),nota};schede.push(obj);}
   ss(SK,schede);closeM('mScheda');renderSchede();
   saveSchedaToDB(obj);
 }
@@ -1558,9 +1564,19 @@ function saveSessionSnapshot(){
     scheda:S.scheda, exIdx:S.exIdx, serIdx:S.serIdx, phase:S.phase,
     tL:S.tL, tT:S.tT, paused:S.paused, done:S.done,
     chronSec:S.chronSec, startTime:S.startTime,
+    hrLog:S.hrLog, setLog:S.setLog, _setStartTs:S._setStartTs, _lastSetEndTs:S._lastSetEndTs,
+    hrSamples:S.hrSamples, _hrLastSampleT:S._hrLastSampleT, _hrRestStartBpm:S._hrRestStartBpm,
     savedAt:Date.now()
   };
-  try{ localStorage.setItem(SESSK, JSON.stringify(snap)); }catch(e){}
+  try{ localStorage.setItem(SESSK, JSON.stringify(snap)); }
+  catch(e){
+    // Storage pieno (sessione lunghissima?): salva comunque senza i log HR/set
+    // piuttosto che perdere l'intero snapshot di recovery.
+    try{
+      const {hrLog,setLog,hrSamples,...lightSnap}=snap;
+      localStorage.setItem(SESSK, JSON.stringify(lightSnap));
+    }catch(e2){}
+  }
 }
 function clearSessionSnapshot(){
   try{ localStorage.removeItem(SESSK); }catch(e){}
@@ -1589,7 +1605,9 @@ function resumeSession(snap, elapsedSec){
   S.done=snap.done; S.startTime=snap.startTime; S.paused=false;
   S.chronSec=snap.chronSec||0;
   _hist=[];
-  S.hrLog=[];S.setLog=[];S._setStartTs=null;S._lastSetEndTs=null;S._pendingRepEntry=null;
+  S.hrLog=snap.hrLog||[];S.setLog=snap.setLog||[];
+  S._setStartTs=snap._setStartTs||null;S._lastSetEndTs=snap._lastSetEndTs||null;S._pendingRepEntry=null;
+  S.hrSamples=snap.hrSamples||[];S._hrLastSampleT=snap._hrLastSampleT||0;S._hrRestStartBpm=snap._hrRestStartBpm||null;
   clearInterval(S._hrLogTimer);S._hrLogTimer=setInterval(hrLogTick,1000);
 
   reqWL();
@@ -2062,12 +2080,21 @@ function showRepCleanOverlay(entry,targetReps){
   ov.className='repclean-ov';ov.id='repCleanOv';
   ov.innerHTML=`<div class="repclean-box">
     <div class="repclean-title">Reps pulite?</div>
-    <input type="number" min="0" id="repCleanInput" value="${targetReps}">
+    <input type="text" inputmode="numeric" pattern="[0-9]*" id="repCleanInput" value="${targetReps}">
     <button onclick="confirmRepClean()">OK</button>
   </div>`;
   document.getElementById('sessOv').appendChild(ov);
   S._pendingRepEntry=entry;
-  setTimeout(()=>document.getElementById('repCleanInput')?.focus(),50);
+  setTimeout(()=>{
+    const inp=document.getElementById('repCleanInput');
+    if(inp){ inp.focus(); const len=inp.value.length; inp.setSelectionRange(len,len); }
+  },50);
+}
+function autoConfirmPendingRep(){
+  if(!S._pendingRepEntry) return;
+  if(S._pendingRepEntry.rep_pulite==null) S._pendingRepEntry.rep_pulite=S._pendingRepEntry.rep_totali;
+  document.getElementById('repCleanOv')?.remove();
+  S._pendingRepEntry=null;
 }
 function confirmRepClean(){
   const inp=document.getElementById('repCleanInput');
@@ -2104,6 +2131,7 @@ function emomCycleDone(){
 }
 function skipRest(){if(S.tL>4){S.tL=4;setTDisp(S.tL,S.tT);}}
 function nextSerie(){
+  autoConfirmPendingRep();
   hrCaptureRestEnd();
   S.serIdx++;S._setStartTs=Date.now();setPhase('EXERCISE');
   const ex=S.scheda.esercizi[S.exIdx];
@@ -2111,17 +2139,20 @@ function nextSerie(){
   else if(ex.tipo==='emom')runTimer(ex.reps,()=>emomCycleDone(),'hold');
 }
 function terminateFromRest(){
+  autoConfirmPendingRep();
   hrCaptureRestEnd();
   pushHist();
   S._earlyExitLabel='terminato';
   setPhase('CONFIRM');
 }
 function terminateFromExercise(){
+  autoConfirmPendingRep();
   pushHist();
   S._earlyExitLabel='completato';
   setPhase('CONFIRM');
 }
 function skipExercise(){
+  autoConfirmPendingRep();
   pushHist();
   clearInterval(S.timer);clearInterval(S.chronTimer);
   S.done[S.exIdx].skipped=true;
@@ -2171,10 +2202,10 @@ function saveQuickEdit(){
 }
 function stopChron(){pushHist();clearInterval(S.chronTimer);setPhase('READY');}
 function finishSession(){
+  autoConfirmPendingRep();
   clearInterval(S.timer);clearInterval(S.chronTimer);
   S.endTime=new Date().toISOString();
   document.getElementById('sessNota').value='';
-  const be=document.getElementById('btnExportSforzo');if(be)be.style.display=getPref('exportCsv')?'':'none';
   openM('mNota');
 }
 // ─── LOG SFORZO NEUROMUSCOLARE (CSV, solo in memoria, generato a fine sessione) ────
@@ -2314,6 +2345,7 @@ function confirmDiscardSession(){
   confirm2('Elimina allenamento','Sei sicuro? L\'allenamento NON verrà salvato nello storico.',()=>closeSess());
 }
 function endSessionSavePartial(){
+  autoConfirmPendingRep();
   closeM('mEndSess');
   clearInterval(S.timer);clearInterval(S.chronTimer);
   // Marca come "non fatto" tutti gli esercizi non ancora raggiunti/completati
@@ -2324,7 +2356,6 @@ function endSessionSavePartial(){
   });
   S.endTime=new Date().toISOString();
   document.getElementById('sessNota').value='';
-  const be=document.getElementById('btnExportSforzo');if(be)be.style.display=getPref('exportCsv')?'':'none';
   openM('mNota');
 }
 
