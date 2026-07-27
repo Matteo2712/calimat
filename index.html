@@ -322,6 +322,7 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 </nav>
 <button class="fab" id="fabBtn" onclick="openNewScheda()"><i class="ti ti-plus"></i></button>
 <div class="undo-toast" id="undoToast"><span id="undoMsg">Eliminato</span><button class="undo-btn" onclick="undoAction()">Annulla</button></div>
+<div class="undo-toast" id="exitToast" style="gap:0"><span id="exitMsg">Premi di nuovo per uscire</span></div>
 
 <!-- MODAL SCHEDA -->
 <div class="mo" id="mScheda">
@@ -2937,6 +2938,43 @@ function resetAll(){
 // ─── MODAL UTILS ─────────────────────────────────────
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
+
+// ─── TASTO INDIETRO HARDWARE (Android) ──────────────────────────────
+// Un back accidentale non deve mai far uscire/ricaricare l'app di colpo:
+// 1) se c'è un modal aperto, il back lo chiude (non esce dall'app)
+// 2) altrimenti serve una seconda pressione entro 2s ("premi di nuovo per uscire")
+let _backArmed=false, _backArmedTimer=null;
+function trapBackButton(){ history.pushState({cmTrap:true}, '', location.href); }
+function topOpenModal(){
+  const opens=[...document.querySelectorAll('.mo.open')];
+  if(!opens.length) return null;
+  opens.sort((a,b)=>(parseInt(getComputedStyle(b).zIndex)||0)-(parseInt(getComputedStyle(a).zIndex)||0));
+  return opens[0];
+}
+function showExitToast(msg){
+  const t=document.getElementById('exitToast');
+  if(!t)return;
+  document.getElementById('exitMsg').textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+window.addEventListener('popstate',()=>{
+  const m=topOpenModal();
+  if(m){ closeM(m.id); trapBackButton(); return; }
+  if(!_backArmed){
+    _backArmed=true;
+    const inSess=document.getElementById('sessOv')?.classList.contains('open');
+    showExitToast(inSess?'Premi di nuovo per uscire (l\'allenamento resta salvato)':'Premi di nuovo per uscire');
+    clearTimeout(_backArmedTimer);
+    // Non ripristiniamo subito il buffer di history: così una seconda pressione
+    // entro 2s fa davvero uscire dall'app (Android trova la history esaurita).
+    // Se invece il tempo scade senza una seconda pressione, ripristiniamo il
+    // buffer così un prossimo "indietro" isolato torna a mostrare il toast.
+    _backArmedTimer=setTimeout(()=>{ _backArmed=false; trapBackButton(); },2000);
+  }
+});
+trapBackButton();
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 document.getElementById('mGrpPicker').addEventListener('click',e=>{if(e.target.id==='mGrpPicker')closeGrpPicker();});
 
