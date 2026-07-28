@@ -1085,27 +1085,37 @@ async function toggleHRConnect(){
   }
 }
 
+let _hrReconnectTimer=null;
+function hrStartReconnectLoop(){
+  clearInterval(_hrReconnectTimer);
+  _hrReconnectTimer=setInterval(async()=>{
+    if(!S.scheda || (_hrDevice && _hrDevice.gatt.connected)){hrStopReconnectLoop();return;}
+    const ok=await hrTryAutoReconnect();
+    if(ok){_hrLossAlerted=false;hrStopReconnectLoop();}
+  },4000);
+}
+function hrStopReconnectLoop(){clearInterval(_hrReconnectTimer);_hrReconnectTimer=null;}
+
 function hrOnDisconnected(){
   _hrChar=null;_hrCurrent=null;
   hrStopWatchdog();
   hrSetToggleUI(false);
-  const manual=_hrManualDisconnect;
-  _hrManualDisconnect=false;
-  if(manual)return; // disconnessione richiesta dall'utente: nessun alert, nessun retry
+  if(_hrManualDisconnect){_hrManualDisconnect=false;return;} // disconnessione richiesta dall'utente: nessun alert, nessun retry
   if(S.scheda)hrAlertSignalLost();
-  // tentativo automatico di riconnessione (silenzioso, senza popup)
-  setTimeout(async()=>{
-    const ok=await hrTryAutoReconnect();
-    if(ok)_hrLossAlerted=false;
-  },1500);
+  hrStartReconnectLoop(); // ritenta ogni 4s finché la fascia non torna a portata (o finisce la sessione)
 }
 
 function hrDisconnect(){
-  _hrManualDisconnect=true;
+  hrStopReconnectLoop();
+  hrStopWatchdog();
+  _hrChar=null;_hrCurrent=null;
+  hrSetToggleUI(false);
   try{
-    if(_hrDevice && _hrDevice.gatt.connected)_hrDevice.gatt.disconnect();
+    if(_hrDevice && _hrDevice.gatt.connected){
+      _hrManualDisconnect=true;
+      _hrDevice.gatt.disconnect(); // farà scattare gattserverdisconnected → hrOnDisconnected, che consuma il flag
+    }
   }catch(e){}
-  hrOnDisconnected();
   _hrDevice=null;
 }
 
