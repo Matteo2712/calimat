@@ -2943,7 +2943,17 @@ function closeM(id){document.getElementById(id).classList.remove('open');}
 // Un back accidentale non deve mai far uscire/ricaricare l'app di colpo:
 // 1) se c'è un modal aperto, il back lo chiude (non esce dall'app)
 // 2) altrimenti serve una seconda pressione entro 2s ("premi di nuovo per uscire")
-let _backArmed=false, _backArmedTimer=null;
+//
+// IMPORTANTE: il buffer di history (trapBackButton) va SEMPRE ripristinato in modo
+// sincrono, subito dopo essere stato consumato — mai con un setTimeout differito.
+// Un timer differito può non scattare in modo affidabile quando l'app va in
+// background anche solo per un istante (causava due bug reali: uscita con una
+// sola pressione, e "buffer perso per sempre" dopo che il toast spariva). Il
+// riconoscimento della "seconda pressione entro 2s" usa invece un confronto tra
+// timestamp calcolato al momento della pressione stessa, che non dipende da
+// nessun timer in background ed è quindi affidabile.
+let _lastBackTs=0;
+const BACK_EXIT_WINDOW=2000;
 function trapBackButton(){ history.pushState({cmTrap:true}, '', location.href); }
 function topOpenModal(){
   const opens=[...document.querySelectorAll('.mo.open')];
@@ -2962,17 +2972,12 @@ function showExitToast(msg){
 window.addEventListener('popstate',()=>{
   const m=topOpenModal();
   if(m){ closeM(m.id); trapBackButton(); return; }
-  if(!_backArmed){
-    _backArmed=true;
-    const inSess=document.getElementById('sessOv')?.classList.contains('open');
-    showExitToast(inSess?'Premi di nuovo per uscire (l\'allenamento resta salvato)':'Premi di nuovo per uscire');
-    clearTimeout(_backArmedTimer);
-    // Non ripristiniamo subito il buffer di history: così una seconda pressione
-    // entro 2s fa davvero uscire dall'app (Android trova la history esaurita).
-    // Se invece il tempo scade senza una seconda pressione, ripristiniamo il
-    // buffer così un prossimo "indietro" isolato torna a mostrare il toast.
-    _backArmedTimer=setTimeout(()=>{ _backArmed=false; trapBackButton(); },2000);
-  }
+  const now=Date.now();
+  const isSecondPress=(now-_lastBackTs)<BACK_EXIT_WINDOW;
+  _lastBackTs=now;
+  if(isSecondPress) return; // conferma di uscita: non ripristiniamo il buffer
+  trapBackButton(); // ripristina subito, sempre: pronto per una prossima singola pressione
+  showExitToast('Premi di nuovo per uscire');
 });
 trapBackButton();
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
