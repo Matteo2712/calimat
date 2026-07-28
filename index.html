@@ -631,6 +631,40 @@ document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) flushPe
 window.addEventListener('focus', flushPendingSync);
 setInterval(()=>{ if(navigator.onLine) flushPendingSync(); }, 10000);
 
+// ─── HR SAMPLES: compressione lossless per il salvataggio su Supabase ───
+// Da array di oggetti {t,bpm,exIdx,phase} a colonne parallele con delta-encoding su t.
+const HR_PHASE_MAP={READY:0,COUNTDOWN:1,EXERCISE:2,REST:3,CHRON:4,CONFIRM:5};
+const HR_PHASE_LIST=['READY','COUNTDOWN','EXERCISE','REST','CHRON','CONFIRM'];
+function compressHrSamples(samples){
+  if(!samples||!Array.isArray(samples)||!samples.length) return samples;
+  const t=[],bpm=[],exIdx=[],phase=[];
+  let prevT=0;
+  samples.forEach((s,i)=>{
+    t.push(i===0?s.t:s.t-prevT);
+    prevT=s.t;
+    bpm.push(s.bpm);
+    exIdx.push(s.exIdx);
+    phase.push(HR_PHASE_MAP[s.phase]??2);
+  });
+  return {t,bpm,exIdx,phase};
+}
+function decompressHrSamples(hr){
+  if(!hr) return [];
+  if(Array.isArray(hr)) return hr; // già in formato "vecchio" (non compresso), per retrocompatibilità
+  const {t,bpm,exIdx,phase}=hr;
+  const out=[];let cum=0;
+  for(let i=0;i<t.length;i++){
+    cum+=t[i];
+    out.push({t:cum,bpm:bpm[i],exIdx:exIdx[i],phase:HR_PHASE_LIST[phase[i]]||'EXERCISE'});
+  }
+  return out;
+}
+// Ritorna una copia di sessObj pronta per Supabase, con hrSamples compresso.
+function sessObjForDB(sessObj){
+  if(!sessObj || !sessObj.hrSamples || !sessObj.hrSamples.length) return sessObj;
+  return {...sessObj, hrSamples: compressHrSamples(sessObj.hrSamples)};
+}
+
 // ─── SUPABASE: CARICA DATI UTENTE ──────────────────
 async function loadFromDB(){
   await flushPendingSync(); // invia prima eventuali modifiche offline non ancora sincronizzate
@@ -642,7 +676,7 @@ async function loadFromDB(){
     ]);
     if(wRes.error||hRes.error) throw wRes.error||hRes.error;
     const schede = wRes.data.map(r=>r.data);
-    const storico = hRes.data.map(r=>({...r.data, _dbId:r.id}));
+    const storico = hRes.data.map(r=>({...r.data, hrSamples:decompressHrSamples(r.data.hrSamples), _dbId:r.id}));
     ss(SK, schede);
     ss(HK, storico);
     setSyncDot('ok');
@@ -728,7 +762,7 @@ async function saveSessionToDB(sessObj,isRetry){
       id: sessObj.id,
       user_id: _currentUser.id,
       completed_at: sessObj.data,
-      data: sessObj
+      data: sessObjForDB(sessObj)
     });
     if(error) throw error;
     setSyncDot('ok');
@@ -751,7 +785,7 @@ async function deleteSessionFromDB(id,isRetry){
 async function updateSessionInDB(sessObj,isRetry){
   setSyncDot('syncing');
   try{
-    const {data,error} = await DB.from('sessions').update({data:sessObj, completed_at:sessObj.data}).eq('id',sessObj.id).select();
+    const {data,error} = await DB.from('sessions').update({data:sessObjForDB(sessObj), completed_at:sessObj.data}).eq('id',sessObj.id).select();
     if(error) throw error;
     if(!data||!data.length) throw new Error('0 righe aggiornate (token scaduto o riga assente)');
     setSyncDot('ok');
