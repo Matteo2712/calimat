@@ -249,10 +249,14 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 /* REP CLEAN OVERLAY (non bloccante, sopra il timer di riposo/EMOM già in corso) */
 .repclean-ov{position:absolute;top:14px;left:14px;right:14px;z-index:60;display:flex;justify-content:center;animation:repcleanIn .18s ease-out}
 @keyframes repcleanIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.repclean-box{background:var(--bg2);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:280px;width:100%}
+.repclean-box{background:var(--bg2);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:280px;width:100%}
+.repclean-row{display:flex;align-items:center;gap:10px}
 .repclean-title{font-size:12px;font-weight:700;color:var(--text2);white-space:nowrap}
 .repclean-box input{width:60px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-weight:700;text-align:center;padding:7px 0;font-family:'Lucida Console',monospace}
-.repclean-box button{background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.repclean-box button.confirm-btn{background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;align-self:flex-end}
+.rir-choices{display:flex;gap:6px}
+.repclean-box .rir-btn{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-weight:800;padding:8px 0;cursor:pointer}
+.repclean-box .rir-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
 /* PiP WINDOW */
 #pipContent{background:#000;color:#fff;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:12px;text-align:center;gap:6px}
 #pipContent .pip-phase{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888}
@@ -559,6 +563,8 @@ const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 const DEFAULT_PREFS={
   hr:true,          // cardiofrequenzimetro (icona/collegamento BLE)
   repClean:true,    // richiesta "reps pulite" a fine set dinamico
+  rir:true,         // richiesta indice RIR (0/1/2/3+) a fine set dinamico
+  fir:true,         // richiesta indice FIR (0/1/2/3) a fine set isometrico: tenuta della forma
   noteEdit:true,    // riquadro modifica nota esercizio a fine esercizio
   nextTimeEdit:true,// riquadro "imposta per la prossima volta" a fine esercizio
   chronEdit:true    // riquadro "modifica rapida" prima del prossimo esercizio
@@ -577,7 +583,9 @@ const FEAT_LIST=[
   {k:'chronEdit', label:'Modifica rapida pre-esercizio', sub:'Riquadro per modificare il prossimo esercizio prima di iniziarlo'},
   {k:'noteEdit', label:'Modifica nota esercizio', sub:'Riquadro per aggiornare la nota a fine esercizio'},
   {k:'nextTimeEdit', label:'Imposta per la prossima volta', sub:'Riquadro per modificare serie/reps/kg/pausa a fine esercizio'},
-  {k:'repClean', label:'Reps pulite', sub:'Chiedi quante reps pulite a fine set (esercizi dinamici); se disattivo, conta sempre tutte le reps come fatte'}
+  {k:'repClean', label:'Reps pulite', sub:'Chiedi quante reps pulite a fine set (esercizi dinamici); se disattivo, conta sempre tutte le reps come fatte'},
+  {k:'rir', label:'RIR a fine set', sub:'Chiedi le reps in riserva (0/1/2/3+) a fine set (esercizi dinamici)'},
+  {k:'fir', label:'FIR a fine set isometrico', sub:'Chiedi la tenuta della forma (3=perfetta, 2=cedimento finale, 1=persa ma sotto-figura tenuta, 0=crollo totale) a fine set (esercizi statici)'}
 ];
 function renderFeatToggles(){
   const box=document.getElementById('featTogglesList');
@@ -2142,11 +2150,14 @@ function logSetCompletion(ex){
   const recupero=S._lastSetEndTs?+((tsInizio-S._lastSetEndTs)/1000).toFixed(2):0;
   const entry={
     esercizio:ex.nome,
+    exIdx:S.exIdx,
     tipo:ex.tipo==='statico'?'statico':'dinamico', // EMOM registrato come "dinamico" su richiesta
     set_numero:S.serIdx+1,
     ts_inizio:tsInizio, ts_fine:tsFine, durata_sec:durata,
     rep_totali:ex.tipo==='dinamico'?ex.reps:(ex.tipo==='emom'?ex.reps:null),
     rep_pulite:null,
+    rir:null,
+    fir:null,
     tempo_isometria:ex.tipo==='statico'?durata:null,
     tempo_recupero_pre_set:recupero,
     note:[]
@@ -2158,30 +2169,73 @@ function logSetCompletion(ex){
 }
 function showRepCleanOverlay(entry,targetReps){
   document.getElementById('repCleanOv')?.remove();
+  const showClean=getPref('repClean');
+  const showRir=getPref('rir');
+  const ov=document.createElement('div');
+  ov.className='repclean-ov';ov.id='repCleanOv';
+  let html='';
+  if(showClean){
+    html+=`<div class="repclean-row">
+      <div class="repclean-title">Reps pulite?</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="repCleanInput" value="${targetReps}">
+    </div>`;
+  }
+  if(showRir){
+    html+=`<div class="repclean-title">RIR</div>
+    <div class="rir-choices" id="rirChoices">
+      ${['0','1','2','3+'].map((lbl,i)=>`<button type="button" class="rir-btn" data-rir="${i}" onclick="selectRir(${i})">${lbl}</button>`).join('')}
+    </div>`;
+  }
+  html+=`<button class="confirm-btn" onclick="confirmRepClean()">OK</button>`;
+  ov.innerHTML=`<div class="repclean-box">${html}</div>`;
+  document.getElementById('sessOv').appendChild(ov);
+  S._pendingRepEntry=entry;
+  if(showClean){
+    setTimeout(()=>{
+      const inp=document.getElementById('repCleanInput');
+      if(inp){ inp.focus(); const len=inp.value.length; inp.setSelectionRange(len,len); }
+    },50);
+  }
+}
+function selectRir(v){
+  if(!S._pendingRepEntry)return;
+  S._pendingRepEntry.rir=v; // 3 = "3+"
+  document.querySelectorAll('#rirChoices .rir-btn').forEach(b=>b.classList.toggle('active',+b.dataset.rir===v));
+  if(!getPref('repClean')) confirmRepClean(); // niente reps pulite da confermare: tap veloce, chiudi subito
+}
+function showFirOverlay(entry){
+  document.getElementById('repCleanOv')?.remove();
   const ov=document.createElement('div');
   ov.className='repclean-ov';ov.id='repCleanOv';
   ov.innerHTML=`<div class="repclean-box">
-    <div class="repclean-title">Reps pulite?</div>
-    <input type="text" inputmode="numeric" pattern="[0-9]*" id="repCleanInput" value="${targetReps}">
-    <button onclick="confirmRepClean()">OK</button>
+    <div class="repclean-title">FIR (tenuta forma)</div>
+    <div class="rir-choices" id="firChoices">
+      ${['0','1','2','3'].map((lbl,i)=>`<button type="button" class="rir-btn" data-fir="${i}" onclick="selectFir(${i})">${lbl}</button>`).join('')}
+    </div>
   </div>`;
   document.getElementById('sessOv').appendChild(ov);
-  S._pendingRepEntry=entry;
-  setTimeout(()=>{
-    const inp=document.getElementById('repCleanInput');
-    if(inp){ inp.focus(); const len=inp.value.length; inp.setSelectionRange(len,len); }
-  },50);
+  S._pendingFirEntry=entry;
+}
+function selectFir(v){
+  if(!S._pendingFirEntry)return;
+  S._pendingFirEntry.fir=v;
+  document.getElementById('repCleanOv')?.remove();
+  S._pendingFirEntry=null;
 }
 function autoConfirmPendingRep(){
-  if(!S._pendingRepEntry) return;
-  if(S._pendingRepEntry.rep_pulite==null) S._pendingRepEntry.rep_pulite=S._pendingRepEntry.rep_totali;
+  if(S._pendingRepEntry){
+    if(S._pendingRepEntry.rep_pulite==null) S._pendingRepEntry.rep_pulite=S._pendingRepEntry.rep_totali;
+    S._pendingRepEntry=null;
+  }
+  S._pendingFirEntry=null;
   document.getElementById('repCleanOv')?.remove();
-  S._pendingRepEntry=null;
 }
 function confirmRepClean(){
   const inp=document.getElementById('repCleanInput');
-  const v=parseInt(inp?.value);
-  if(S._pendingRepEntry) S._pendingRepEntry.rep_pulite=isNaN(v)?null:v;
+  if(inp){
+    const v=parseInt(inp.value);
+    if(S._pendingRepEntry) S._pendingRepEntry.rep_pulite=isNaN(v)?null:v;
+  }
   document.getElementById('repCleanOv')?.remove();
   S._pendingRepEntry=null;
 }
@@ -2192,8 +2246,11 @@ function serieDone(){
   const entry=logSetCompletion(ex);
   S.done[S.exIdx].serie_fatte++;
   if(ex.tipo==='dinamico'){
-    if(getPref('repClean')) showRepCleanOverlay(entry,ex.reps);
-    else entry.rep_pulite=ex.reps;
+    const showClean=getPref('repClean'), showRir=getPref('rir');
+    if(!showClean) entry.rep_pulite=ex.reps; // default se non chiediamo le reps pulite
+    if(showClean||showRir) showRepCleanOverlay(entry,ex.reps);
+  } else if(ex.tipo==='statico' && getPref('fir')){
+    showFirOverlay(entry);
   }
   if((S.serIdx+1)>=ex.serie){S._earlyExitLabel=null;setPhase('CONFIRM');}else{setPhase('REST');}
 }
@@ -2360,10 +2417,13 @@ function buildSforzoRows(){
       }
       return bpmNear(target);
     }
+    const rirLabel=entry.rir==null?'':(entry.rir===3?'3+':String(entry.rir));
+    const firLabel=entry.fir==null?'':String(entry.fir);
     rows.push([
       'SET', entry.ts_inizio, entry.ts_fine, entry.durata_sec.toFixed(2),
       entry.esercizio, entry.tipo, entry.set_numero,
       entry.rep_totali!=null?entry.rep_totali:'', entry.rep_pulite!=null?entry.rep_pulite:'',
+      rirLabel, firLabel,
       entry.tempo_isometria!=null?entry.tempo_isometria.toFixed(2):'',
       hr_baseline!=null?hr_baseline:'', hr_peak!=null?hr_peak:'', hr_media!=null?hr_media:'', hr_min!=null?hr_min:'',
       array_bpm, array_ts,
@@ -2376,7 +2436,7 @@ function buildSforzoRows(){
 }
 function exportSforzoCSV(){
   if(!S.setLog || !S.setLog.length){alert2('Nessun set registrato in questa sessione.');return;}
-  const header=['tipo_evento','timestamp_inizio','timestamp_fine','durata_sec','esercizio','tipo','set_numero','rep_totali','rep_pulite','tempo_isometria','hr_baseline_pre30','hr_peak','hr_media','hr_min','array_bpm','array_timestamps','hr_30s','hr_60s','hr_90s','hr_120s','tempo_recupero_pre_set','note'];
+  const header=['tipo_evento','timestamp_inizio','timestamp_fine','durata_sec','esercizio','tipo','set_numero','rep_totali','rep_pulite','rir','fir','tempo_isometria','hr_baseline_pre30','hr_peak','hr_media','hr_min','array_bpm','array_timestamps','hr_30s','hr_60s','hr_90s','hr_120s','tempo_recupero_pre_set','note'];
   const rows=buildSforzoRows();
   const csv=[header,...rows].map(r=>r.map(sforzoCsvEsc).join(';')).join('\r\n');
   const nomeScheda=S.scheda?S.scheda.nome.replace(/[^a-z0-9]+/gi,'_'):'sessione';
@@ -2391,7 +2451,21 @@ function saveSession(nota){
     nomeScheda:S.scheda.nome,
     gruppi:Array.isArray(S.scheda.gruppi)?S.scheda.gruppi.slice():[],
     nota:String(nota||'').trim(),
-    esercizi:S.done.map(d=>({...d}))
+    esercizi:S.done.map((d,i)=>{
+      const obj={...d};
+      const exType=S.scheda.esercizi[i]?.tipo;
+      const setsForEx=(S.setLog||[]).filter(e=>e.exIdx===i);
+      if(setsForEx.length){
+        if(exType==='dinamico'){
+          const rir=setsForEx.map(e=>e.rir);
+          if(rir.some(v=>v!=null)) obj.rir_serie=rir; // array compatto, un valore per serie (indice = set_numero-1)
+        } else if(exType==='statico'){
+          const fir=setsForEx.map(e=>e.fir);
+          if(fir.some(v=>v!=null)) obj.fir_serie=fir;
+        }
+      }
+      return obj;
+    })
   };
   if(S.hrSamples && S.hrSamples.length){
     const bpms=S.hrSamples.map(s=>s.bpm);
