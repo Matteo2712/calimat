@@ -213,7 +213,11 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
 .hdtog{width:34px;height:34px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
 .hfatte-input{width:32px;padding:4px 0;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:'Lucida Console',monospace;text-align:center}
 .hdtog.done{background:rgba(68,255,136,.15);border-color:rgba(68,255,136,.35)}
+.beeppre-choices{display:flex;gap:8px}
+.beeppre-btn{flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;font-weight:800;padding:13px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:background .15s,border-color .15s}
+.beeppre-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
 .hdtog.notdone{background:rgba(255,68,68,.12);border-color:rgba(255,68,68,.25)}
+.hdtog.partial{background:rgba(255,170,0,.15);border-color:rgba(255,170,0,.35)}
 .hdtog.skipped{background:rgba(255,68,68,.05);border-color:rgba(255,68,68,.25)}
 /* STATS */
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
@@ -438,9 +442,8 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
     </div>
     <button class="btn bg bw" style="margin-top:12px" onclick="testBeep()"><i class="ti ti-bell"></i> Prova beep</button>
     <div class="stitle">Preavviso countdown</div>
-    <p style="font-size:12px;color:var(--text3);margin:-4px 0 6px">Un beep quando mancano N secondi alla fine (oltre ai beep degli ultimi 3s)</p>
-    <div class="rir-choices" id="beepPreChoices"></div>
-    <button class="btn bg bw" style="margin-top:8px" onclick="testBeepPre()"><i class="ti ti-bell"></i> Prova preavviso</button>
+    <p style="font-size:12px;color:var(--text3);margin:-4px 0 6px">Doppio beep quando mancano N secondi alla fine (oltre ai beep degli ultimi 3s)</p>
+    <div class="beeppre-choices" id="beepPreChoices"></div>
     <div class="stitle">Gruppi</div>
     <div id="gruppiMgmtList" style="margin-bottom:10px"></div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -927,13 +930,13 @@ function bL(){
   beep(freq,.6,Math.min(v*1.2,1));
 }
 function bP(){
-  // Preavviso — un solo beep, distinto dai tick finali (bS) e dal beep di fine (bL)
+  // Preavviso — doppio beep ravvicinato, distinto dai tick finali (bS) e dal beep di fine (bL)
   const v=_vol;
   const freq=v>=0.95?1100:850;
-  beep(freq,.25,Math.min(v*1.2,1));
+  beep(freq,.15,Math.min(v*1.2,1));
+  setTimeout(()=>beep(freq,.15,Math.min(v*1.2,1)),160);
 }
 function testBeep(){bS();setTimeout(()=>bL(),400);}
-function testBeepPre(){bP();}
 function bHrLost(){
   // 3 beep bassi ravvicinati, riconoscibili rispetto ai beep di sessione
   const v=_vol;
@@ -1370,7 +1373,7 @@ function renderBeepPreChoices(){
   const box=document.getElementById('beepPreChoices');
   if(!box)return;
   const cur=getPref('beepPre');
-  box.innerHTML=[10,15,20].map(v=>`<button type="button" class="rir-btn${v===cur?' active':''}" onclick="selectBeepPre(${v})">${v}s</button>`).join('');
+  box.innerHTML=[10,15,20].map(v=>`<button type="button" class="beeppre-btn${v===cur?' active':''}" onclick="selectBeepPre(${v})">${v===cur?'<i class="ti ti-check"></i>':''}${v}s</button>`).join('');
 }
 function selectBeepPre(v){
   setPref('beepPre',v);
@@ -2010,6 +2013,9 @@ function setPhase(ph){
     _confirmEnterTS=Date.now();
     const earlyLbl=S._earlyExitLabel;
     const pNote=getPref('noteEdit'), pNextTime=getPref('nextTimeEdit');
+    // Con repClean/fir attivi abbiamo dati automatici di qualità: la domanda manuale
+    // "hai completato tutte le serie?" serve solo come fallback quando quei dati non ci sono.
+    const hasAutoData = ex.tipo==='dinamico'?getPref('repClean'):(ex.tipo==='statico'?getPref('fir'):false);
     // Reps totali fatte vs dovute sull'intero esercizio (solo dinamici): segnala se non ci sei arrivato.
     let repsShortfallHtml='';
     if(ex.tipo==='dinamico'){
@@ -2050,6 +2056,8 @@ function setPhase(ph){
       </div>`:''}
       ${earlyLbl?
         `<div class="cdbx"><button class="cdyes" style="width:100%" onclick="confirmDoneWithNote(false)"><i class="ti ti-check"></i> Conferma e continua</button></div>`
+        : hasAutoData?
+        `<div class="cdbx"><button class="cdyes" style="width:100%" onclick="confirmDoneWithNote(true)"><i class="ti ti-check"></i> Conferma e continua</button></div>`
         :
         `<div class="cdbx">
           <p>Hai completato tutte le ${ex.serie} serie?</p>
@@ -2515,6 +2523,30 @@ function saveSession(nota){
           if(fir.some(v=>v!=null)) obj.fir_serie=fir;
         }
       }
+      // ─── Qualità automatica dell'esecuzione (per spunta storico/stats) ───
+      // perfect = serie e reps/FIR tutti al target; partial = serie complete ma reps/FIR sotto target; red = serie non tutte fatte
+      if(d.skipped){
+        obj.qualita='skipped';
+      } else if(d.serie_fatte<d.serie_target){
+        obj.qualita='red';
+      } else if(exType==='dinamico' && getPref('repClean')){
+        const fatte=setsForEx.reduce((a,e)=>a+(e.rep_pulite!=null?e.rep_pulite:(e.rep_totali||0)),0);
+        const dovute=d.serie_target*d.reps_target;
+        obj.reps_fatte_tot=fatte; obj.reps_dovute_tot=dovute;
+        obj.qualita=fatte>=dovute?'perfect':'partial';
+      } else if(exType==='statico' && getPref('fir')){
+        const firVals=setsForEx.map(e=>e.fir).filter(v=>v!=null);
+        if(firVals.length){
+          const fatto=firVals.reduce((a,v)=>a+v,0),max=firVals.length*3;
+          obj.fir_fatto_tot=fatto; obj.fir_max_tot=max;
+          obj.qualita=fatto>=max?'perfect':'partial';
+        } else {
+          obj.qualita=d.done===false?'partial':'perfect';
+        }
+      } else {
+        // Nessun dato automatico disponibile (repClean/fir disattivi, o EMOM): usa la conferma manuale
+        obj.qualita=d.done===false?'partial':'perfect';
+      }
       return obj;
     })
   };
@@ -2604,6 +2636,30 @@ function exFatteHTML(e){
   return t;
 }
 
+function exQualitaCalc(e){
+  // Stato a 3 livelli (+ skipped) per la spunta, e testo fatte/dovute per lo storico/stats.
+  // Retrocompatibile con i vecchi record storici che non hanno ancora il campo `qualita`.
+  if(e.skipped) return {status:'skipped',text:null,ratioOk:null};
+  let text=null,ratioOk=null;
+  if(e.reps_dovute_tot!=null){ text=`${e.reps_fatte_tot}/${e.reps_dovute_tot}`; ratioOk=e.reps_fatte_tot>=e.reps_dovute_tot; }
+  else if(e.fir_max_tot!=null){ text=`${e.fir_fatto_tot}/${e.fir_max_tot} FIR`; ratioOk=e.fir_fatto_tot>=e.fir_max_tot; }
+  const status=e.qualita || (e.serie_fatte!==e.serie_target?'red':(e.done===false?'partial':'perfect'));
+  return {status,text,ratioOk};
+}
+function exStatusIconHTML(e){
+  const q=exQualitaCalc(e);
+  if(q.status==='skipped') return '<i class="ti ti-minus" style="color:var(--red);font-size:16px"></i>';
+  if(q.status==='red') return '<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>';
+  if(q.status==='partial') return '<i class="ti ti-circle-filled" style="color:var(--orange);font-size:14px"></i>';
+  return '<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>';
+}
+function exQualitaTextHTML(e){
+  if(e.skipped) return '—';
+  const q=exQualitaCalc(e);
+  if(q.text==null) return exFatteHTML(e); // fallback al formato NxM quando non abbiamo il dato fatte/dovute
+  const color=q.ratioOk?'var(--green)':'var(--red)';
+  return `<span style="color:${color};font-weight:700">${esc(q.text)}</span>`;
+}
 function renderStorico(){
   const el=document.getElementById('storicoList');const h=getFilteredStorico();
   if(!h.length){el.innerHTML=`<div class="empty"><i class="ti ti-history"></i><p>${_grpFilter.length?'Nessun allenamento in questo gruppo.':'Nessun allenamento ancora.'}</p></div>`;return;}
@@ -2636,8 +2692,8 @@ function renderStorico(){
           <div class="hex${e.skipped?' skipped':''}">
             <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
             <span style="display:flex;align-items:center;gap:7px">
-              <span style="font-family:'Lucida Console',monospace;font-size:12px">${exFatteHTML(e)}</span>
-              ${e.skipped?'<i class="ti ti-minus" style="color:var(--red);font-size:16px"></i>':e.done===true?'<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>':e.done===false?'<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>':''}
+              <span style="font-family:'Lucida Console',monospace;font-size:12px">${exQualitaTextHTML(e)}</span>
+              ${exStatusIconHTML(e)}
             </span>
           </div>`).join('')}</div>
       </div>
@@ -2646,7 +2702,13 @@ function renderStorico(){
 }
 
 let _eHIdx=null,_eHState=[];
-function hStateOf(e){ return e.skipped ? 'skipped' : (e.done===true ? 'done' : 'notdone'); }
+function hStateOf(e){
+  if(e.skipped) return 'skipped';
+  if(e.qualita==='perfect') return 'done';
+  if(e.qualita==='partial') return 'partial';
+  if(e.qualita==='red') return 'notdone';
+  return e.done===true ? 'done' : 'notdone'; // fallback record vecchi senza `qualita`
+}
 function openEditH(id){
   const h=ls(HK);const idx=h.findIndex(x=>x.id===id);if(idx<0)return;
   _eHIdx=idx;const s=h[idx];
@@ -2677,9 +2739,10 @@ function openEditH(id){
     </div>`).join('');
   openM('mEditH');
 }
-function dIcon(st){return st==='done'?'<i class="ti ti-check" style="color:var(--green)"></i>':st==='skipped'?'<i class="ti ti-minus" style="color:var(--red)"></i>':'<i class="ti ti-x" style="color:var(--red)"></i>';}
+function dIcon(st){return st==='done'?'<i class="ti ti-check" style="color:var(--green)"></i>':st==='partial'?'<i class="ti ti-circle-filled" style="color:var(--orange);font-size:14px"></i>':st==='skipped'?'<i class="ti ti-minus" style="color:var(--red)"></i>':'<i class="ti ti-x" style="color:var(--red)"></i>';}
 function cycleHState(i){
-  _eHState[i]=_eHState[i]==='done'?'notdone':_eHState[i]==='notdone'?'skipped':'done';
+  const order=['done','partial','notdone','skipped'];
+  _eHState[i]=order[(order.indexOf(_eHState[i])+1)%order.length];
   const st=_eHState[i];
   const b=document.getElementById('htog_'+i);
   b.className='hdtog '+st;
@@ -2708,6 +2771,7 @@ function saveEditH(){
     const st=_eHState[i];
     e.skipped=(st==='skipped');
     e.done=(st==='done');
+    e.qualita=st==='done'?'perfect':st==='partial'?'partial':st==='skipped'?'skipped':'red';
     const fInp=document.getElementById('hfatte_'+i);
     if(fInp){
       const v=parseInt(fInp.value);
@@ -2968,8 +3032,8 @@ function showDayHistory(y,m,d,el){
         <div class="hex${e.skipped?' skipped':''}">
           <span>${e.skipped?`<span style="text-decoration:line-through">${esc(e.nome)}</span> <span style="text-decoration:none">(saltato)</span>`:esc(e.nome)}</span>
           <span style="display:flex;align-items:center;gap:7px">
-            <span style="font-family:'Lucida Console',monospace;font-size:12px">${exFatteHTML(e)}</span>
-            ${e.skipped?'<i class="ti ti-minus" style="color:var(--red);font-size:16px"></i>':e.done===true?'<i class="ti ti-check" style="color:var(--green);font-size:16px"></i>':e.done===false?'<i class="ti ti-x" style="color:var(--red);font-size:16px"></i>':''}
+            <span style="font-family:'Lucida Console',monospace;font-size:12px">${exQualitaTextHTML(e)}</span>
+            ${exStatusIconHTML(e)}
           </span>
         </div>${hrInfo?`<div style="text-align:right;margin-top:-4px;margin-bottom:4px">${hrInfo}</div>`:''}`;
       }).join('')}
