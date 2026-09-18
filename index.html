@@ -2532,13 +2532,13 @@ function saveSession(nota){
       } else if(exType==='dinamico' && getPref('repClean')){
         const fatte=setsForEx.reduce((a,e)=>a+(e.rep_pulite!=null?e.rep_pulite:(e.rep_totali||0)),0);
         const dovute=d.serie_target*d.reps_target;
-        obj.reps_fatte_tot=fatte; obj.reps_dovute_tot=dovute;
+        obj.tot_fatte=fatte; obj.tot_target=dovute;
         obj.qualita=fatte>=dovute?'perfect':'partial';
       } else if(exType==='statico' && getPref('fir')){
         const firVals=setsForEx.map(e=>e.fir).filter(v=>v!=null);
         if(firVals.length){
           const fatto=firVals.reduce((a,v)=>a+v,0),max=firVals.length*3;
-          obj.fir_fatto_tot=fatto; obj.fir_max_tot=max;
+          obj.tot_fatte=fatto; obj.tot_target=max; obj.tot_unit='FIR';
           obj.qualita=fatto>=max?'perfect':'partial';
         } else {
           obj.qualita=d.done===false?'partial':'perfect';
@@ -2641,8 +2641,9 @@ function exQualitaCalc(e){
   // Retrocompatibile con i vecchi record storici che non hanno ancora il campo `qualita`.
   if(e.skipped) return {status:'skipped',text:null,ratioOk:null};
   let text=null,ratioOk=null;
-  if(e.reps_dovute_tot!=null){ text=`${e.reps_fatte_tot}/${e.reps_dovute_tot}`; ratioOk=e.reps_fatte_tot>=e.reps_dovute_tot; }
-  else if(e.fir_max_tot!=null){ text=`${e.fir_fatto_tot}/${e.fir_max_tot} FIR`; ratioOk=e.fir_fatto_tot>=e.fir_max_tot; }
+  if(e.tot_target!=null){ text=e.tot_unit==='FIR'?`${e.tot_fatte}/${e.tot_target} FIR`:`${e.tot_fatte}/${e.tot_target}`; ratioOk=e.tot_fatte>=e.tot_target; }
+  else if(e.reps_dovute_tot!=null){ text=`${e.reps_fatte_tot}/${e.reps_dovute_tot}`; ratioOk=e.reps_fatte_tot>=e.reps_dovute_tot; } // record storici pre-rinomina
+  else if(e.fir_max_tot!=null){ text=`${e.fir_fatto_tot}/${e.fir_max_tot} FIR`; ratioOk=e.fir_fatto_tot>=e.fir_max_tot; } // record storici pre-rinomina
   const status=e.qualita || (e.serie_fatte!==e.serie_target?'red':(e.done===false?'partial':'perfect'));
   return {status,text,ratioOk};
 }
