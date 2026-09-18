@@ -437,6 +437,10 @@ input,textarea,select{font-family:'Inter',sans-serif;outline:none}
       <i class="ti ti-volume-2" style="color:var(--text);font-size:20px"></i>
     </div>
     <button class="btn bg bw" style="margin-top:12px" onclick="testBeep()"><i class="ti ti-bell"></i> Prova beep</button>
+    <div class="stitle">Preavviso countdown</div>
+    <p style="font-size:12px;color:var(--text3);margin:-4px 0 6px">Un beep quando mancano N secondi alla fine (oltre ai beep degli ultimi 3s)</p>
+    <div class="rir-choices" id="beepPreChoices"></div>
+    <button class="btn bg bw" style="margin-top:8px" onclick="testBeepPre()"><i class="ti ti-bell"></i> Prova preavviso</button>
     <div class="stitle">Gruppi</div>
     <div id="gruppiMgmtList" style="margin-bottom:10px"></div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -567,7 +571,8 @@ const DEFAULT_PREFS={
   fir:true,         // richiesta indice FIR (0/1/2/3) a fine set isometrico: tenuta della forma
   noteEdit:true,    // riquadro modifica nota esercizio a fine esercizio
   nextTimeEdit:true,// riquadro "imposta per la prossima volta" a fine esercizio
-  chronEdit:true    // riquadro "modifica rapida" prima del prossimo esercizio
+  chronEdit:true,   // riquadro "modifica rapida" prima del prossimo esercizio
+  beepPre:15        // secondi di preavviso: beep singolo a N secondi dalla fine di un countdown (10/15/20)
 };
 function getPrefs(){
   try{ return {...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(PREFK)||'{}')}; }
@@ -921,7 +926,14 @@ function bL(){
   const freq=v>=0.95?900:660;
   beep(freq,.6,Math.min(v*1.2,1));
 }
+function bP(){
+  // Preavviso — un solo beep, distinto dai tick finali (bS) e dal beep di fine (bL)
+  const v=_vol;
+  const freq=v>=0.95?1100:850;
+  beep(freq,.25,Math.min(v*1.2,1));
+}
 function testBeep(){bS();setTimeout(()=>bL(),400);}
+function testBeepPre(){bP();}
 function bHrLost(){
   // 3 beep bassi ravvicinati, riconoscibili rispetto ai beep di sessione
   const v=_vol;
@@ -1354,7 +1366,17 @@ function renderEHGrpButton(){
   if(nameEl) nameEl.textContent=_eHGruppiTemp.length?grpFilterLabel(_eHGruppiTemp):'Nessun gruppo';
 }
 
-function openSettings(){renderGruppiMgmt();renderFeatToggles();openM('mSettings');}
+function renderBeepPreChoices(){
+  const box=document.getElementById('beepPreChoices');
+  if(!box)return;
+  const cur=getPref('beepPre');
+  box.innerHTML=[10,15,20].map(v=>`<button type="button" class="rir-btn${v===cur?' active':''}" onclick="selectBeepPre(${v})">${v}s</button>`).join('');
+}
+function selectBeepPre(v){
+  setPref('beepPre',v);
+  renderBeepPreChoices();
+}
+function openSettings(){renderGruppiMgmt();renderFeatToggles();renderBeepPreChoices();openM('mSettings');}
 let _editingGruppoId=null;
 function renderGruppiMgmt(){
   const el=document.getElementById('gruppiMgmtList');if(!el)return;
@@ -1988,6 +2010,16 @@ function setPhase(ph){
     _confirmEnterTS=Date.now();
     const earlyLbl=S._earlyExitLabel;
     const pNote=getPref('noteEdit'), pNextTime=getPref('nextTimeEdit');
+    // Reps totali fatte vs dovute sull'intero esercizio (solo dinamici): segnala se non ci sei arrivato.
+    let repsShortfallHtml='';
+    if(ex.tipo==='dinamico'){
+      const setsForEx=S.setLog.filter(e=>e.exIdx===S.exIdx);
+      const doneTotal=setsForEx.reduce((a,e)=>a+(e.rep_pulite!=null?e.rep_pulite:(e.rep_totali||0)),0);
+      const targetTotal=ex.serie*ex.reps;
+      if(targetTotal>0 && doneTotal<targetTotal){
+        repsShortfallHtml=`<div style="font-size:14px;color:var(--red);text-align:center;margin:-6px 0 10px;font-weight:700">Non completato: ${doneTotal}/${targetTotal} reps</div>`;
+      }
+    }
     if(!pNote && !pNextTime){
       // Nessuna delle due schermate di revisione è attiva: passa subito all'esercizio successivo.
       confirmDoneWithNote(earlyLbl?false:true);
@@ -1999,6 +2031,7 @@ function setPhase(ph){
       <div style="margin:14px 0 10px;text-align:center">
         <div style="font-size:24px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px">esercizio ${earlyLbl||'completato'}</div>
       </div>
+      ${repsShortfallHtml}
       ${pNote?`<div class="note-update-box">
         <div class="note-update-label">Aggiorna nota esercizio</div>
         <textarea class="ta" id="noteUpdateTA" style="min-height:44px;font-size:14px" placeholder="Nota per la prossima volta...">${esc(ex.nota||'')}</textarea>
@@ -2108,6 +2141,7 @@ function runTimer(secs,onEnd,mode,tot){
   S.tL=secs;S.tT=(tot!==undefined&&tot!==null)?tot:secs;clearInterval(S.timer);
   S.timer=setInterval(()=>{
     if(S.paused)return;S.tL--;
+    if(S.tL===getPref('beepPre'))bP();
     if(S.tL<=3&&S.tL>0)bS();
     if(S.tL<=0){clearInterval(S.timer);bL();onEnd();return;}
     setTDisp(S.tL,S.tT,mode);
@@ -2177,13 +2211,15 @@ function showRepCleanOverlay(entry,targetReps){
   if(showClean){
     html+=`<div class="repclean-row">
       <div class="repclean-title">Reps pulite?</div>
-      <input type="text" inputmode="numeric" pattern="[0-9]*" id="repCleanInput" value="${targetReps}">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="repCleanInput" value="${targetReps}" oninput="onRepCleanInput()">
     </div>`;
   }
   if(showRir){
-    html+=`<div class="repclean-title">RIR</div>
+    html+=`<div id="rirBlock">
+    <div class="repclean-title">RIR</div>
     <div class="rir-choices" id="rirChoices">
       ${['0','1','2','3+'].map((lbl,i)=>`<button type="button" class="rir-btn" data-rir="${i}" onclick="selectRir(${i})">${lbl}</button>`).join('')}
+    </div>
     </div>`;
   }
   html+=`<button class="confirm-btn" onclick="confirmRepClean()">OK</button>`;
@@ -2194,8 +2230,20 @@ function showRepCleanOverlay(entry,targetReps){
     setTimeout(()=>{
       const inp=document.getElementById('repCleanInput');
       if(inp){ inp.focus(); const len=inp.value.length; inp.setSelectionRange(len,len); }
+      onRepCleanInput();
     },50);
   }
+}
+function onRepCleanInput(){
+  // Sotto il target le reps in riserva non hanno senso (sei già andato a cedimento prima): nascondi RIR
+  const inp=document.getElementById('repCleanInput');
+  const rirBlock=document.getElementById('rirBlock');
+  if(!inp||!rirBlock||!S._pendingRepEntry)return;
+  const v=parseInt(inp.value);
+  const target=S._pendingRepEntry.rep_totali;
+  const below=!isNaN(v)&&target!=null&&v<target;
+  rirBlock.style.display=below?'none':'';
+  if(below) S._pendingRepEntry.rir=null;
 }
 function selectRir(v){
   if(!S._pendingRepEntry)return;
@@ -2211,6 +2259,9 @@ function showFirOverlay(entry){
     <div class="repclean-title">FIR (tenuta forma)</div>
     <div class="rir-choices" id="firChoices">
       ${['0','1','2','3'].map((lbl,i)=>`<button type="button" class="rir-btn" data-fir="${i}" onclick="selectFir(${i})">${lbl}</button>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5">
+      3 = forma perfetta fino alla fine · 2 = cedimento solo nell'ultimo istante · 1 = forma persa ma posizione sotto-figura tenuta · 0 = crollo totale
     </div>
   </div>`;
   document.getElementById('sessOv').appendChild(ov);

@@ -36,6 +36,10 @@ aliases: [CaliMat, calimat, github.com/Matteo2712/calimat]
 - Session UX: context-sensitive "Termina esercizio" / "Skip Pausa" (jumps to 4s remaining), history stack with back button, Android hardware back-button double-tap-to-exit, session state persistence/recovery after OS kill.
 - `hrSamples` compression: delta-encoded parallel arrays (~74–77% size reduction) applied at Supabase write/read.
 - Open issue: Skip Pausa countdown behavior was still not fully correct at the end of one session; Matteo opted to re-explain from scratch in a new chat rather than continue debugging.
+- RIR nascosto automaticamente quando le reps pulite scendono sotto il target del set; avviso automatico "Non completato: X/Y reps" a fine esercizio (somma reps su tutte le serie vs target, solo dinamici).
+- FIR: etichette esplicative dei 4 valori mostrate direttamente nell'overlay a fine set isometrico.
+- Beep di preavviso configurabile (10/15/20s, default 15s) in ogni countdown, oltre ai beep degli ultimi 3s.
+- Aperto e non ancora deciso: ridefinire cosa significhi "non completato" e il colore verde/rosso per gli esercizi isometrici (secondi tenuti vs previsti) — Matteo vuole ripensare la logica insieme prima di toccarla, dato che l'app punta al cedimento e il verde potrebbe segnalare un carico programmato troppo leggero.
 
 ## On the horizon (as of last session — re-verify)
 
@@ -46,3 +50,4 @@ aliases: [CaliMat, calimat, github.com/Matteo2712/calimat]
 - Algorithmic scoring system at design stage: a Bayesian hierarchical filter as the core engine (mirroring Garmin/Firstbeat/Coros architecture), fed by scientifically validated features (TRIMP, HRR, signature matching against personal best), with changepoint detection as a diagnostic layer.
 - Issues identified in the evaluated v7.0 algorithm document: fixed weights contradicting the stated philosophy, division instability in the corrective factor formula, and single-session calibration treated as a fixed parameter.
 - Reusable LLM prompt for scientific guidance on quantifying neuromuscular/neural effort from HR data — bpm-and-time-only, explicitly excluding cardiovascular/metabolic metrics.
+- Roadmap "valutazione automatica dello sforzo" (scomposta in sotto-task, da affrontare uno alla volta): (1) test EMOM per esercizio per osservare la risposta cardiaca; (2) protocollo di test per trovare la FC massima pre-cedimento di ogni esercizio; (3) usare lo storico HR per esercizio per stimare la distanza dalla FC massima durante l'esecuzione; (4) valutazione automatica se alzare serie/volume/reps, alternare schede, o spostare l'enfasi tra volume e forza.
